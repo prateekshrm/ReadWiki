@@ -69,8 +69,8 @@ export default function RootLayout() {
                         <RemixIcon
                             name={
                                 focused
-                                    ? "file-marked-fill"
-                                    : "file-marked-line"
+                                    ? "book-marked-fill"
+                                    : "book-marked-line"
                             }
                             size={TAB_ICON_SIZE}
                             color={color as string}

@@ -1,4 +1,3 @@
-// import { View } from "@/components/BlurBackdrop";
 import Colors from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
@@ -149,7 +148,6 @@ const styles = StyleSheet.create({
 
     container: {
         flexDirection: "row",
-        // Translucent tint so the pill still reads as a surface behind the frost.
         backgroundColor: Colors.surface,
         borderRadius: 999,
         padding: CONTAINER_PADDING,

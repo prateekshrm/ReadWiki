@@ -24,8 +24,9 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import RemixIcon from "react-native-remix-icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { height } = Dimensions.get("window");
+const { height } = Dimensions.get("screen");
 
 const BATCH_SIZE = 20;
 
@@ -119,6 +120,8 @@ const Flow = () => {
     const [articles, setArticles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+
+    const insets = useSafeAreaInsets();
 
     // Flow is a full-screen dark pager, so keep the header in its white state.
     useSolidHeader();
@@ -217,7 +220,14 @@ const Flow = () => {
                         style={styles.bottomScrim}
                     />
 
-                    <View style={styles.content}>
+                    <View
+                        style={[
+                            styles.content,
+                            {
+                                paddingBottom: insets.bottom + 100,
+                            },
+                        ]}
+                    >
                         {thumbnail && (
                             <View style={styles.imageCard}>
                                 <Image
@@ -269,7 +279,7 @@ const Flow = () => {
                             <SaveButton item={item} />
 
                             <CircleButton
-                                icon="share-forward-line"
+                                icon="share-line"
                                 onPress={() => shareArticle(item)}
                             />
                         </View>
@@ -380,8 +390,6 @@ const styles = StyleSheet.create({
 
     content: {
         paddingHorizontal: 20,
-        // Clear the floating tab bar (~pill height + its 16 bottom margin).
-        paddingBottom: 130,
         gap: 14,
     },
 
@@ -471,8 +479,6 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.25)",
         backgroundColor: "rgba(255,255,255,0.14)",
     },
 
