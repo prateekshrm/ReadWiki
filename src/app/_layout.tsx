@@ -1,11 +1,14 @@
 import Header from "@/components/Header";
 import { HeaderScrollProvider } from "@/components/HeaderScroll";
 import useNetworkAlert from "@/hooks/useNetworkAlert";
+import { initializeNotifications, isExpoGo } from "@/services/notification";
 import { usePreferences } from "@/services/preferences";
 import { useFonts } from "expo-font";
-import { router, Stack } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { Href, router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 
 import { DMSans_400Regular } from "@expo-google-fonts/dm-sans/400Regular";
 import { DMSans_500Medium } from "@expo-google-fonts/dm-sans/500Medium";
@@ -41,54 +44,67 @@ export default function RootLayout() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loaded, error]);
 
-    // const lastNotificationResponse =
-    //     Notifications.useLastNotificationResponse();
+    const lastNotificationResponse =
+        isExpoGo() || Platform.OS === "web"
+            ? null
+            : Notifications.useLastNotificationResponse();
 
-    // const handledNotificationId = useRef<string | null>(null);
+    const handledNotificationId = useRef<string | null>(null);
 
-    // useEffect(() => {
-    //     void initializeNotifications();
-    // }, []);
+    useEffect(() => {
+        if (!isExpoGo() && Platform.OS !== "web") {
+            void initializeNotifications();
+        }
+    }, []);
 
-    // const handleNotificationResponse = (
-    //     response: Notifications.NotificationResponse,
-    // ) => {
-    //     const { notification } = response;
+    const handleNotificationResponse = (
+        response: Notifications.NotificationResponse,
+    ) => {
+        if (!response?.notification) return;
+        const { notification } = response;
 
-    //     // Prevent handling the same notification twice
-    //     if (handledNotificationId.current === notification.request.identifier) {
-    //         return;
-    //     }
+        // Prevent handling the same notification twice
+        if (
+            handledNotificationId.current === notification.request.identifier
+        ) {
+            return;
+        }
 
-    //     handledNotificationId.current = notification.request.identifier;
+        handledNotificationId.current = notification.request.identifier;
 
-    //     const data = notification.request.content.data;
+        const data = notification.request.content.data;
 
-    //     if (
-    //         data &&
-    //         data.type === "featured-article" &&
-    //         typeof data.href === "string"
-    //     ) {
-    //         router.push(data.href as Href);
-    //     }
-    // };
+        if (
+            data &&
+            data.type === "featured-article" &&
+            typeof data.href === "string"
+        ) {
+            router.push(data.href as Href);
+        }
+    };
 
-    // // App launched from a notification
-    // useEffect(() => {
-    //     if (lastNotificationResponse) {
-    //         handleNotificationResponse(lastNotificationResponse);
-    //     }
-    // }, [lastNotificationResponse]);
+    // App launched from a notification
+    useEffect(() => {
+        if (lastNotificationResponse) {
+            handleNotificationResponse(lastNotificationResponse);
+        }
+    }, [lastNotificationResponse]);
 
-    // // App already running (foreground/background)
-    // useEffect(() => {
-    //     const subscription =
-    //         Notifications.addNotificationResponseReceivedListener(
-    //             handleNotificationResponse,
-    //         );
+    // App already running (foreground/background)
+    useEffect(() => {
+        if (isExpoGo() || Platform.OS === "web") return;
 
-    //     return () => subscription.remove();
-    // }, []);
+        try {
+            const subscription =
+                Notifications.addNotificationResponseReceivedListener(
+                    handleNotificationResponse,
+                );
+
+            return () => subscription.remove();
+        } catch (error) {
+            console.warn("Failed to add notification response listener:", error);
+        }
+    }, []);
 
     if (!loaded && !error) {
         return null;
