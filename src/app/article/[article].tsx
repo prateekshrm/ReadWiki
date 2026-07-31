@@ -90,7 +90,7 @@ const HeaderRight = ({ meta }: { meta: ArticleMeta }) => {
                 onPress={() => shareArticle(meta)}
             >
                 <RemixIcon
-                    name={"share-forward-line"}
+                    name={"share-line"}
                     size={20}
                     color={Colors.text}
                     fallback={null}
