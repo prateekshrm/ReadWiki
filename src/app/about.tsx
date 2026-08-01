@@ -12,8 +12,6 @@ const AUTHOR_PORTFOLIO = "https://pratk.in";
 const AUTHOR_GITHUB = "https://github.com/pratksharma";
 const REPOSITORY_URL = "https://github.com/pratksharma/ReadWiki";
 const AUTHOR_BIO = "Sofware Engineer";
-const AUTHOR_AVATAR =
-    "https://raw.githubusercontent.com/pratksharma/PariSar/refs/heads/main/mobile/assets/profile-icon.png";
 
 export default function About() {
     const insets = useSafeAreaInsets();
@@ -34,7 +32,7 @@ export default function About() {
         >
             <View style={styles.header}>
                 <Image
-                    source={require("@/assets/images/icon.png")}
+                    source={require("@/assets/images/splash-icon.png")}
                     style={styles.icon}
                 />
 
@@ -57,7 +55,10 @@ export default function About() {
 
             <Text style={styles.sectionTitle}>Author</Text>
             <View style={styles.card}>
-                <Image source={{ uri: AUTHOR_AVATAR }} style={styles.avatar} />
+                <Image
+                    source={require("@/assets/profile.png")}
+                    style={styles.avatar}
+                />
 
                 <View style={styles.cardContent}>
                     <Text style={styles.name}>{AUTHOR_NAME}</Text>
@@ -186,7 +187,6 @@ const styles = StyleSheet.create({
     icon: {
         width: 88,
         height: 88,
-        borderRadius: 22,
         marginBottom: 14,
     },
     appName: {
