@@ -125,7 +125,7 @@ export const scheduleTomorrowFeaturedNotification = async () => {
                 dateObj.getFullYear() === tomorrow.getFullYear() &&
                 dateObj.getMonth() === tomorrow.getMonth() &&
                 dateObj.getDate() === tomorrow.getDate() &&
-                dateObj.getHours() === 21 &&
+                dateObj.getHours() === 9 &&
                 dateObj.getMinutes() === 0
             );
         });
@@ -148,7 +148,7 @@ export const scheduleTomorrowFeaturedNotification = async () => {
 
         const triggerDate = new Date();
         triggerDate.setDate(triggerDate.getDate() + 1);
-        triggerDate.setHours(21, 0, 0, 0); // 9:00 PM next day
+        triggerDate.setHours(9, 0, 0, 0); // 9:00 PM next day
 
         await Notifications.scheduleNotificationAsync({
             content: {

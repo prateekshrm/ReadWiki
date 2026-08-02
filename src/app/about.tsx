@@ -11,7 +11,7 @@ const AUTHOR_NAME = "Prateek Sharma";
 const AUTHOR_PORTFOLIO = "https://pratk.in";
 const AUTHOR_GITHUB = "https://github.com/pratksharma";
 const REPOSITORY_URL = "https://github.com/pratksharma/ReadWiki";
-const AUTHOR_BIO = "Sofware Engineer";
+const AUTHOR_BIO = "Sofware Developer";
 
 export default function About() {
     const insets = useSafeAreaInsets();
@@ -161,9 +161,17 @@ export default function About() {
                     provide access to Wikipedia content.
                 </Text>
 
-                <Text style={styles.copyright}>
-                    © {new Date().getFullYear()} {AUTHOR_NAME}
-                </Text>
+                <View style={styles.copyright}>
+                    <RemixIcon
+                        name="copyright-line"
+                        size={20}
+                        color={Colors.textSecondary}
+                        fallback={null}
+                    />
+                    <Text style={styles.copyrightText}>
+                        {new Date().getFullYear()} {AUTHOR_NAME}
+                    </Text>
+                </View>
             </View>
         </Animated.ScrollView>
     );
@@ -242,9 +250,8 @@ const styles = StyleSheet.create({
         color: Colors.text,
     },
     bio: {
-        lineHeight: 20,
-        marginTop: 8,
-        color: Colors.text,
+        marginTop: 2,
+        color: Colors.textSecondary,
         fontFamily: "DMSans-Regular",
     },
     authorLink: {
@@ -306,6 +313,12 @@ const styles = StyleSheet.create({
     },
     copyright: {
         marginTop: 16,
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 8,
+    },
+    copyrightText: {
         fontFamily: "DMSans-Medium",
         color: Colors.textSecondary,
     },
