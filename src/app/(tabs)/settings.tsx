@@ -1,10 +1,8 @@
 import { useScreenScroll } from "@/components/HeaderScroll";
 import Colors from "@/constants/Colors";
 import {
-    cancelAllNotifications,
     getNotificationPermissionStatus,
     isExpoGo,
-    requestNotificationPermission,
     scheduleTomorrowFeaturedNotification,
     sendTestNotification,
 } from "@/services/notification";
@@ -14,15 +12,14 @@ import {
     usePreferences,
 } from "@/services/preferences";
 import { clearSavedArticles, useSavedArticles } from "@/services/savedArticles";
-import { Host, Switch as JetpackSwitch } from "@expo/ui/jetpack-compose";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     Alert,
-    Platform,
+    AppState,
+    Linking,
     Pressable,
     StyleSheet,
-    Switch,
     Text,
     View,
 } from "react-native";
@@ -45,29 +42,40 @@ const Settings = () => {
     const checkPermission = async () => {
         const status = await getNotificationPermissionStatus();
         setPermissionStatus(status);
+        if (status !== "unsupported") {
+            const isGranted = status === "granted";
+            setPreference(
+                "notificationPermission",
+                isGranted ? "granted" : "denied",
+            );
+            if (isGranted) {
+                await scheduleTomorrowFeaturedNotification();
+            }
+        }
     };
 
     useEffect(() => {
         void checkPermission();
+
+        const subscription = AppState.addEventListener(
+            "change",
+            (nextAppState) => {
+                if (nextAppState === "active") {
+                    void checkPermission();
+                }
+            },
+        );
+
+        return () => {
+            subscription.remove();
+        };
     }, []);
 
-    const handleToggleNotification = async (value: boolean) => {
-        if (isExpoGo()) {
+    const handleOpenNotificationSettings = () => {
+        if (isExpoGo() || permissionStatus === "unsupported") {
             return;
         }
-
-        if (value) {
-            const granted = await requestNotificationPermission();
-            if (granted) {
-                setPermissionStatus("granted");
-                await scheduleTomorrowFeaturedNotification();
-            } else {
-                setPermissionStatus("denied");
-            }
-        } else {
-            await cancelAllNotifications();
-            setPermissionStatus("denied");
-        }
+        void Linking.openSettings();
     };
 
     const handleTestNotification = async () => {
@@ -76,10 +84,26 @@ const Settings = () => {
         setSendingTest(true);
         try {
             const result = await sendTestNotification();
-            Alert.alert(
-                result.success ? "Test Notification" : "Notice",
-                result.message,
-            );
+            if (!result.success && permissionStatus === "denied") {
+                Alert.alert(
+                    "Notification Permission Required",
+                    result.message,
+                    [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                            text: "Open Settings",
+                            onPress: () => {
+                                void Linking.openSettings();
+                            },
+                        },
+                    ],
+                );
+            } else {
+                Alert.alert(
+                    result.success ? "Test Notification" : "Notice",
+                    result.message,
+                );
+            }
             void checkPermission();
         } finally {
             setSendingTest(false);
@@ -110,12 +134,9 @@ const Settings = () => {
             return "Not supported in Expo Go or Web";
         }
         if (permissionStatus === "granted") {
-            return "Featured article notification enabled";
+            return "Notifications enabled. Tap to manage in settings";
         }
-        if (permissionStatus === "denied") {
-            return "Permission denied. Tap switch to enable";
-        }
-        return "Receive featured article notifications";
+        return "Notifications disabled. Tap to manage in settings";
     };
 
     return (
@@ -172,57 +193,59 @@ const Settings = () => {
             {/* Notifications */}
             <Text style={styles.sectionTitle}>Notifications</Text>
 
-            <View style={styles.item}>
+            <Pressable
+                style={[
+                    styles.item,
+                    permissionStatus === "unsupported" && styles.disabledItem,
+                ]}
+                onPress={handleOpenNotificationSettings}
+                disabled={permissionStatus === "unsupported"}
+            >
                 <View style={styles.left}>
                     <View style={styles.iconContainer}>
-                        <RemixIcon
-                            name="notification-4-line"
-                            size={22}
-                            color={Colors.accent}
-                            fallback={null}
-                        />
+                        {permissionStatus === "granted" ? (
+                            <RemixIcon
+                                name="notification-4-line"
+                                size={22}
+                                color={Colors.accent}
+                                fallback={null}
+                            />
+                        ) : permissionStatus !== "unsupported" ? (
+                            <RemixIcon
+                                name="notification-off-line"
+                                size={22}
+                                color={Colors.accent}
+                                fallback={null}
+                            />
+                        ) : null}
                     </View>
 
                     <View style={styles.itemTextWrap}>
-                        <Text style={styles.title}>Daily Notifications</Text>
+                        <Text style={styles.title}>
+                            Notification Permission
+                        </Text>
                         <Text style={styles.subtitle}>
                             {getPermissionSubtitle()}
                         </Text>
                     </View>
                 </View>
 
-                {Platform.OS === "android" ? (
-                    <Host matchContents>
-                        <JetpackSwitch
-                            value={permissionStatus === "granted"}
-                            onCheckedChange={handleToggleNotification}
-                            enabled={
-                                permissionStatus !== "unsupported" &&
-                                permissionStatus !== "loading"
-                            }
-                            colors={{
-                                checkedThumbColor: Colors.surface,
-                                checkedTrackColor: Colors.primary,
-                                uncheckedTrackColor: Colors.backgroundMuted,
-                            }}
-                        />
-                    </Host>
-                ) : (
-                    <Switch
-                        value={permissionStatus === "granted"}
-                        onValueChange={handleToggleNotification}
-                        disabled={
-                            permissionStatus === "unsupported" ||
-                            permissionStatus === "loading"
-                        }
-                        trackColor={{
-                            false: Colors.backgroundMuted,
-                            true: Colors.primary,
-                        }}
-                        thumbColor={Colors.surface}
+                {permissionStatus === "granted" ? (
+                    <RemixIcon
+                        name="checkbox-circle-fill"
+                        size={22}
+                        color={Colors.accent}
+                        fallback={null}
                     />
-                )}
-            </View>
+                ) : permissionStatus !== "unsupported" ? (
+                    <RemixIcon
+                        name="arrow-right-s-line"
+                        size={22}
+                        color={Colors.textSecondary}
+                        fallback={null}
+                    />
+                ) : null}
+            </Pressable>
 
             <Pressable
                 style={[

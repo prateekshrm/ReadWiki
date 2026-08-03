@@ -64,9 +64,7 @@ export default function RootLayout() {
         const { notification } = response;
 
         // Prevent handling the same notification twice
-        if (
-            handledNotificationId.current === notification.request.identifier
-        ) {
+        if (handledNotificationId.current === notification.request.identifier) {
             return;
         }
 
@@ -102,7 +100,10 @@ export default function RootLayout() {
 
             return () => subscription.remove();
         } catch (error) {
-            console.warn("Failed to add notification response listener:", error);
+            console.warn(
+                "Failed to add notification response listener:",
+                error,
+            );
         }
     }, []);
 
@@ -127,6 +128,7 @@ export default function RootLayout() {
                             }
                         />
                     ),
+                    animation: "simple_push",
                 }}
             >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

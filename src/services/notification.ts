@@ -2,6 +2,7 @@ import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import { getPreferences, setPreference } from "./preferences";
 import { getTomorrowFeaturedArticleTitle } from "./wikipedia";
 
 export const isExpoGo = (): boolean => {
@@ -48,6 +49,13 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     }
 
     try {
+        if (Platform.OS === "android") {
+            await Notifications.setNotificationChannelAsync("default", {
+                name: "Default",
+                importance: Notifications.AndroidImportance.HIGH,
+            });
+        }
+
         const { status: existingStatus } =
             await Notifications.getPermissionsAsync();
 
@@ -60,13 +68,6 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 
         if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
             return false;
-        }
-
-        if (Platform.OS === "android") {
-            await Notifications.setNotificationChannelAsync("default", {
-                name: "Default",
-                importance: Notifications.AndroidImportance.HIGH,
-            });
         }
 
         return true;
@@ -94,40 +95,38 @@ export const scheduleTomorrowFeaturedNotification = async () => {
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         const hasNotification = scheduled.some((notification) => {
-            const trigger = notification.trigger;
-
-            if (
-                !trigger ||
-                typeof trigger !== "object" ||
-                !("date" in trigger)
-            ) {
+            if (notification.content?.data?.type !== "featured-article") {
                 return false;
             }
 
-            const data = notification.content.data;
-
-            if (data?.type !== "featured-article") {
-                return false;
+            const trigger = notification.trigger as any;
+            if (!trigger) {
+                return true;
             }
 
-            let dateObj: Date;
-            const dateVal = (trigger as any).date;
+            let triggerMs: number | null = null;
+            const val = trigger.date ?? trigger.timestamp ?? trigger.value;
 
-            if (typeof dateVal === "number" || typeof dateVal === "string") {
-                dateObj = new Date(dateVal);
-            } else if (dateVal instanceof Date) {
-                dateObj = dateVal;
-            } else {
-                return false;
+            if (typeof val === "number") {
+                triggerMs = val;
+            } else if (typeof val === "string") {
+                triggerMs = new Date(val).getTime();
+            } else if (val instanceof Date) {
+                triggerMs = val.getTime();
+            } else if (typeof trigger === "number") {
+                triggerMs = trigger;
             }
 
-            return (
-                dateObj.getFullYear() === tomorrow.getFullYear() &&
-                dateObj.getMonth() === tomorrow.getMonth() &&
-                dateObj.getDate() === tomorrow.getDate() &&
-                dateObj.getHours() === 9 &&
-                dateObj.getMinutes() === 0
-            );
+            if (triggerMs != null && !isNaN(triggerMs)) {
+                const dateObj = new Date(triggerMs);
+                return (
+                    dateObj.getFullYear() === tomorrow.getFullYear() &&
+                    dateObj.getMonth() === tomorrow.getMonth() &&
+                    dateObj.getDate() === tomorrow.getDate()
+                );
+            }
+
+            return true;
         });
 
         if (hasNotification) {
@@ -148,7 +147,7 @@ export const scheduleTomorrowFeaturedNotification = async () => {
 
         const triggerDate = new Date();
         triggerDate.setDate(triggerDate.getDate() + 1);
-        triggerDate.setHours(9, 0, 0, 0); // 9:00 PM next day
+        triggerDate.setHours(9, 0, 0, 0); // 9:00 AM next day
 
         await Notifications.scheduleNotificationAsync({
             content: {
@@ -180,9 +179,32 @@ export const initializeNotifications = async () => {
     }
 
     try {
-        const hasPermission = await requestNotificationPermission();
-        if (hasPermission) {
-            await scheduleTomorrowFeaturedNotification();
+        const prefs = getPreferences();
+
+        if (prefs.notificationPermission === null) {
+            // First time opening app: ask for permission
+            const hasPermission = await requestNotificationPermission();
+            setPreference(
+                "notificationPermission",
+                hasPermission ? "granted" : "denied",
+            );
+            if (hasPermission) {
+                await scheduleTomorrowFeaturedNotification();
+            }
+        } else {
+            // Never ask for permission again on launch, but check OS status and schedule if granted
+            const status = await getNotificationPermissionStatus();
+            if (status !== "unsupported") {
+                const isGranted =
+                    status === Notifications.PermissionStatus.GRANTED;
+                setPreference(
+                    "notificationPermission",
+                    isGranted ? "granted" : "denied",
+                );
+                if (isGranted) {
+                    await scheduleTomorrowFeaturedNotification();
+                }
+            }
         }
     } catch (error) {
         console.warn("Failed to initialize notifications:", error);
@@ -201,8 +223,14 @@ export const sendTestNotification = async (): Promise<{
     }
 
     try {
-        const hasPermission = await requestNotificationPermission();
-        if (!hasPermission) {
+        const status = await getNotificationPermissionStatus();
+        const isGranted = status === Notifications.PermissionStatus.GRANTED;
+        setPreference(
+            "notificationPermission",
+            isGranted ? "granted" : "denied",
+        );
+
+        if (!isGranted) {
             return {
                 success: false,
                 message:

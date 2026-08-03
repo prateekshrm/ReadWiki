@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { readJSON, writeJSON } from "./storage";
 
+export type NotificationPreference = "granted" | "denied" | null;
+
 // User settings that persist between app launches.
 export type Preferences = {
     // Whether the user has finished the first-run onboarding screens.
@@ -10,6 +12,8 @@ export type Preferences = {
     // Open Wikipedia links inside the app (true) — kept as a setting so
     // it is easy to extend later.
     openLinksInApp: boolean;
+    // User notification permission status. Defaults to null until asked on first launch.
+    notificationPermission: NotificationPreference;
 };
 
 const STORAGE_KEY = "preferences";
@@ -18,6 +22,7 @@ const DEFAULTS: Preferences = {
     onboarded: false,
     fontScale: 1,
     openLinksInApp: true,
+    notificationPermission: null,
 };
 
 // Available reading sizes shown in Settings.
