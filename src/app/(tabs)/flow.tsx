@@ -75,7 +75,6 @@ const SaveButton = ({ item }: { item: any }) => {
             onPress={() =>
                 toggleSavedArticle({
                     title: item.title,
-                    description: item.extract,
                     thumbnail: item.thumbnail?.source,
                     savedAt: Date.now(),
                 })

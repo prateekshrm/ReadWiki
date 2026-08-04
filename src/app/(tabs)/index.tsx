@@ -5,6 +5,7 @@ import { useSolidHeader } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
 import NewsCard from "@/components/NewsCard";
 import OnThisDayEvent from "@/components/OnThisDayEvent";
+import SectionButton from "@/components/SectionButton";
 import Colors from "@/constants/Colors";
 import { getFeaturedData } from "@/services/wikipedia";
 import { stripHtml } from "@/utils/html";
@@ -178,20 +179,10 @@ const Home = () => {
                                 )}
                             </View>
 
-                            <View
-                                style={{
-                                    alignItems: "center",
-                                    marginTop: 16,
-                                }}
-                            >
-                                <Button
-                                    text={`More Trending Articles`}
-                                    iconName="arrow-right-s-line"
-                                    iconPosition="right"
-                                    variant="secondary"
-                                    onPress={() => router.navigate("/trending")}
-                                />
-                            </View>
+                            <SectionButton
+                                text="More Trending Articles"
+                                onPress={() => router.navigate("/trending")}
+                            />
                         </View>
                     )}
                     {news.length > 0 && (
@@ -227,20 +218,10 @@ const Home = () => {
                                 })}
                             </View>
 
-                            <View
-                                style={{
-                                    alignItems: "center",
-                                    marginTop: 16,
-                                }}
-                            >
-                                <Button
-                                    text={`More News`}
-                                    iconName="arrow-right-s-line"
-                                    iconPosition="right"
-                                    variant="secondary"
-                                    onPress={() => router.navigate("/news")}
-                                />
-                            </View>
+                            <SectionButton
+                                text="More News"
+                                onPress={() => router.navigate("/news")}
+                            />
                         </View>
                     )}
                     {imageOfTheDay && (
@@ -323,22 +304,12 @@ const Home = () => {
                                 })}
                             </View>
 
-                            <View
-                                style={{
-                                    alignItems: "center",
-                                    marginTop: 16,
-                                }}
-                            >
-                                <Button
-                                    text={`More Did You Know`}
-                                    iconName="arrow-right-s-line"
-                                    iconPosition="right"
-                                    variant="secondary"
-                                    onPress={() =>
-                                        router.navigate("/did-you-know")
-                                    }
-                                />
-                            </View>
+                            <SectionButton
+                                text="More Did You Know"
+                                onPress={() =>
+                                    router.navigate("/did-you-know")
+                                }
+                            />
                         </View>
                     )}
                     {onThisDayArticles.length > 0 && (
@@ -384,22 +355,12 @@ const Home = () => {
                                 )}
                             </View>
 
-                            <View
-                                style={{
-                                    alignItems: "center",
-                                    marginTop: 16,
-                                }}
-                            >
-                                <Button
-                                    text={`More On This Day`}
-                                    iconName="arrow-right-s-line"
-                                    iconPosition="right"
-                                    variant="secondary"
-                                    onPress={() =>
-                                        router.navigate("/on-this-day")
-                                    }
-                                />
-                            </View>
+                            <SectionButton
+                                text="More On This Day"
+                                onPress={() =>
+                                    router.navigate("/on-this-day")
+                                }
+                            />
                         </View>
                     )}
                 </ScrollView>

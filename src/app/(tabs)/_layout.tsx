@@ -62,15 +62,15 @@ export default function RootLayout() {
             />
 
             <Tabs.Screen
-                name="saved"
+                name="library"
                 options={{
-                    title: "Saved",
+                    title: "Library",
                     tabBarIcon: ({ focused, color }) => (
                         <RemixIcon
                             name={
                                 focused
-                                    ? "book-marked-fill"
-                                    : "book-marked-line"
+                                    ? "book-shelf-fill"
+                                    : "book-shelf-line"
                             }
                             size={TAB_ICON_SIZE}
                             color={color as string}

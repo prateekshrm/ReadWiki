@@ -1,7 +1,7 @@
 import Colors from "@/constants/Colors";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import RemixIcon from "react-native-remix-icon";
+import RemixIcon, { type IconName } from "react-native-remix-icon";
 
 type ArticleCardProps = {
     title: string;
@@ -9,9 +9,10 @@ type ArticleCardProps = {
     image?: string;
     tag?: string;
     onPress: () => void;
-    // When provided, a bookmark button is shown on the right (used in the
-    // Saved tab to quickly remove an article).
+    // When provided, an action button is shown on the right (used in Saved/History to quickly remove an article).
     onRemove?: () => void;
+    removeIcon?: IconName;
+    removeIconColor?: string;
 };
 
 export default function ArticleCard({
@@ -21,6 +22,8 @@ export default function ArticleCard({
     tag,
     onPress,
     onRemove,
+    removeIcon = "bookmark-fill",
+    removeIconColor,
 }: ArticleCardProps) {
     return (
         <Pressable
@@ -60,13 +63,20 @@ export default function ArticleCard({
             </View>
 
             {onRemove && (
-                <Pressable style={styles.removeButton} onPress={onRemove}>
-                    <RemixIcon
-                        name="bookmark-fill"
-                        size={22}
-                        color={Colors.accent}
-                        fallback={null}
-                    />
+                <Pressable
+                    style={({ pressed }) => [
+                        styles.pill,
+                        pressed && styles.pillPressed,
+                    ]}
+                >
+                    <Pressable onPress={onRemove}>
+                        <RemixIcon
+                            name={removeIcon}
+                            size={20}
+                            color={Colors.text}
+                            fallback={null}
+                        />
+                    </Pressable>
                 </Pressable>
             )}
         </Pressable>
@@ -131,8 +141,13 @@ const styles = StyleSheet.create({
         fontFamily: "DMSans-Medium",
     },
 
-    removeButton: {
-        alignSelf: "center",
-        padding: 8,
+    pill: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 100,
+        backgroundColor: Colors.backgroundMuted,
+        margin: "auto",
     },
+
+    pillPressed: { filter: "brightness(0.9)", transform: [{ scale: 0.98 }] },
 });

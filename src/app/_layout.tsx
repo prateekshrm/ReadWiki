@@ -150,6 +150,14 @@ export default function RootLayout() {
                     name="on-this-day"
                     options={{ title: "On This Day" }}
                 />
+                <Stack.Screen
+                    name="history"
+                    options={{ title: "History" }}
+                />
+                <Stack.Screen
+                    name="saved"
+                    options={{ title: "Saved" }}
+                />
                 <Stack.Screen name="about" options={{ title: "About" }} />
             </Stack>
         </HeaderScrollProvider>

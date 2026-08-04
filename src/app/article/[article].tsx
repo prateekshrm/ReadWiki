@@ -4,6 +4,7 @@ import RichText from "@/components/RichText";
 import Colors from "@/constants/Colors";
 import { parseArticle, type Block } from "@/services/articleParser";
 import { usePreferences } from "@/services/preferences";
+import { addToHistory } from "@/services/articleHistory";
 import { toggleSavedArticle, useIsSaved } from "@/services/savedArticles";
 import { getArticleSummary, getFullArticle } from "@/services/wikipedia";
 import { Image } from "expo-image";
@@ -69,7 +70,6 @@ const HeaderRight = ({ meta }: { meta: ArticleMeta }) => {
                 onPress={() =>
                     toggleSavedArticle({
                         title: meta.title,
-                        description: meta.description,
                         thumbnail: meta.thumbnail,
                         savedAt: Date.now(),
                     })
@@ -138,13 +138,22 @@ const Article = () => {
             // Both carry their own width/height for the aspect ratio.
             const hero = summary?.originalimage ?? summary?.thumbnail;
 
-            setMeta({
+            const articleMeta = {
                 title: summary?.title ?? article,
                 description: summary?.description ?? summary?.extract,
                 thumbnail: summary?.thumbnail?.source,
                 heroImage: hero?.source,
                 heroWidth: hero?.width,
                 heroHeight: hero?.height,
+            };
+
+            setMeta(articleMeta);
+
+            // Track this article in reading history.
+            addToHistory({
+                title: articleMeta.title,
+                thumbnail: articleMeta.thumbnail,
+                readAt: Date.now(),
             });
 
             if (html) {

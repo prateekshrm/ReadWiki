@@ -1,20 +1,19 @@
 import { useSyncExternalStore } from "react";
-import { readJSON, writeJSON } from "./storage";
+import db from "./database";
 
-// Shape of a single saved article. We keep just enough to render a
-// nice card in the Saved tab and to open the full article again.
+// Shape of a single saved article. We store only title + thumbnail
+// (no description) to keep the data lean.
 export type SavedArticle = {
     title: string;
-    description?: string;
     thumbnail?: string;
     savedAt: number;
 };
 
-const STORAGE_KEY = "saved-articles";
-
-// In-memory copy of the saved list. Loaded once from disk and kept in
+// In-memory copy of the saved list. Loaded once from SQLite and kept in
 // sync on every change so reads are instant.
-let savedArticles: SavedArticle[] = readJSON<SavedArticle[]>(STORAGE_KEY, []);
+let savedArticles: SavedArticle[] = db.getAllSync<SavedArticle>(
+    "SELECT title, thumbnail, saved_at as savedAt FROM saved_articles ORDER BY saved_at DESC",
+);
 
 // Simple subscription system so React components re-render when the
 // saved list changes (used by useSyncExternalStore below).
@@ -22,11 +21,6 @@ const listeners = new Set<() => void>();
 
 const emit = () => {
     listeners.forEach((listener) => listener());
-};
-
-const persist = () => {
-    writeJSON(STORAGE_KEY, savedArticles);
-    emit();
 };
 
 export const isArticleSaved = (title: string) => {
@@ -38,19 +32,26 @@ export const saveArticle = (article: SavedArticle) => {
         return;
     }
 
+    db.runSync(
+        "INSERT OR REPLACE INTO saved_articles (title, thumbnail, saved_at) VALUES (?, ?, ?)",
+        [article.title, article.thumbnail ?? null, article.savedAt],
+    );
+
     // Newest saved articles go to the top of the list.
     savedArticles = [article, ...savedArticles];
-    persist();
+    emit();
 };
 
 export const removeArticle = (title: string) => {
+    db.runSync("DELETE FROM saved_articles WHERE title = ?", [title]);
     savedArticles = savedArticles.filter((article) => article.title !== title);
-    persist();
+    emit();
 };
 
 export const clearSavedArticles = () => {
+    db.runSync("DELETE FROM saved_articles");
     savedArticles = [];
-    persist();
+    emit();
 };
 
 export const toggleSavedArticle = (article: SavedArticle) => {

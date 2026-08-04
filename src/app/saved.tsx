@@ -1,18 +1,61 @@
 import ArticleCard from "@/components/ArticleCard";
 import { useScreenScroll } from "@/components/HeaderScroll";
 import Colors from "@/constants/Colors";
-import { removeArticle, useSavedArticles } from "@/services/savedArticles";
-import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import {
+    clearSavedArticles,
+    removeArticle,
+    useSavedArticles,
+} from "@/services/savedArticles";
+import { router, useNavigation } from "expo-router";
+import { useEffect } from "react";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import RemixIcon from "react-native-remix-icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const ClearButton = () => {
+    const savedArticles = useSavedArticles();
+
+    if (savedArticles.length === 0) return null;
+
+    return (
+        <Pressable
+            style={({ pressed }) => [
+                styles.headerButton,
+                pressed && styles.headerButtonPressed,
+            ]}
+            onPress={() =>
+                Alert.alert("Clear Saved", "Remove all saved articles?", [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Clear",
+                        style: "destructive",
+                        onPress: clearSavedArticles,
+                    },
+                ])
+            }
+        >
+            <RemixIcon
+                name="bookmark-2-line"
+                size={20}
+                color={Colors.text}
+                fallback={null}
+            />
+        </Pressable>
+    );
+};
+
 const Saved = () => {
     const savedArticles = useSavedArticles();
-    const onScroll = useScreenScroll();
-
     const insets = useSafeAreaInsets();
+    const onScroll = useScreenScroll();
+    const navigation = useNavigation();
+
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => <ClearButton />,
+        });
+    }, [navigation]);
 
     if (savedArticles.length === 0) {
         return (
@@ -23,7 +66,7 @@ const Saved = () => {
                     color={Colors.textMuted}
                     fallback={null}
                 />
-                <Text style={styles.emptyTitle}>No saved articles yet</Text>
+                <Text style={styles.emptyTitle}>No saved articles</Text>
                 <Text style={styles.emptySubtitle}>
                     Tap the bookmark icon while reading an article to save it
                     here for later.
@@ -36,20 +79,17 @@ const Saved = () => {
         <View style={styles.container}>
             <Animated.FlatList
                 data={savedArticles}
-                keyExtractor={(item) => item.title}
                 contentContainerStyle={[
-                    styles.content,
-                    {
-                        paddingBottom: insets.bottom + 80,
-                    },
+                    styles.listContent,
+                    { paddingBottom: insets.bottom + 32 },
                 ]}
-                showsVerticalScrollIndicator={false}
                 onScroll={onScroll}
                 scrollEventThrottle={16}
+                keyExtractor={(item) => item.title}
+                showsVerticalScrollIndicator={false}
                 renderItem={({ item }) => (
                     <ArticleCard
                         title={item.title}
-                        subtitle={item.description}
                         image={item.thumbnail}
                         onPress={() =>
                             router.push({
@@ -73,7 +113,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background,
     },
 
-    content: {
+    listContent: {
         paddingTop: 100,
     },
 
@@ -99,5 +139,17 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         fontFamily: "DMSans-Regular",
         color: Colors.textMuted,
+    },
+
+    headerButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 100,
+        backgroundColor: Colors.backgroundMuted,
+    },
+
+    headerButtonPressed: {
+        filter: "brightness(0.9)",
+        transform: [{ scale: 0.98 }],
     },
 });
