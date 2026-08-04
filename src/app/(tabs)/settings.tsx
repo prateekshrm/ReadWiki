@@ -156,8 +156,8 @@ const Settings = () => {
             <Text style={styles.sectionTitle}>Reading</Text>
 
             <View style={styles.card}>
-                <Text style={styles.rowLabel}>Text size</Text>
-                <Text style={styles.rowHint}>
+                <Text style={styles.title}>Text size</Text>
+                <Text style={styles.subtitle}>
                     Adjust how large article text appears.
                 </Text>
 
@@ -187,6 +187,36 @@ const Settings = () => {
                             </Pressable>
                         );
                     })}
+                </View>
+                <View
+                    style={{
+                        paddingTop: 6,
+                        borderTopWidth: 1,
+                        borderTopColor: Colors.backgroundMuted,
+                    }}
+                >
+                    <Text
+                        style={[
+                            styles.headingPreview,
+                            {
+                                fontSize: 28 * preferences.fontScale,
+                            },
+                        ]}
+                    >
+                        Preview Heading
+                    </Text>
+                    <Text
+                        style={[
+                            styles.paragraphPreview,
+                            {
+                                fontSize: 17 * preferences.fontScale,
+                                lineHeight: 28 * preferences.fontScale,
+                            },
+                        ]}
+                    >
+                        This is a preview text showing how article content
+                        appears with your selected font size.
+                    </Text>
                 </View>
             </View>
 
@@ -392,30 +422,26 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: Colors.surface,
     },
-    rowLabel: {
-        fontSize: 16,
-        fontFamily: "DMSans-SemiBold",
+    headingPreview: {
+        fontFamily: "Fraunces-Medium",
         color: Colors.text,
+        marginBottom: 8,
     },
-    rowHint: {
-        marginTop: 2,
-        fontSize: 13,
+    paragraphPreview: {
         fontFamily: "DMSans-Regular",
-        color: Colors.textSecondary,
+        color: Colors.text,
     },
     chips: {
         flexDirection: "row",
         flexWrap: "wrap",
         gap: 8,
-        marginTop: 14,
+        marginVertical: 14,
     },
     chip: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
         borderRadius: 999,
         backgroundColor: Colors.backgroundMuted,
-        borderWidth: 1,
-        borderColor: Colors.border,
     },
     chipActive: {
         backgroundColor: Colors.primary,
