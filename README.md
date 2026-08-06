@@ -29,7 +29,6 @@ Whether you're diving deep into complex topics, browsing daily curated trivia, o
 - **Article Flow Feed**: Scroll through an immersive feed of fascinating Wikipedia articles.
 - **Instant Search**: Powerful real-time Wikipedia search with instant article previews and suggestions.
 - **Distraction-Free Reader**: Enhanced reading experience featuring custom serif typography (_Fraunces_) and clean sans-serif body (_DM Sans_).
-- **Interactive Media & Image Viewer**: High-resolution image galleries with smooth viewing controls.
 - **Bookmarks & Saved Articles**: Save articles locally to revisit anytime, even offline.
 - **Native Performance**: Ultra-responsive UI built with `react-native-reanimated` and Expo SDK components.
 
