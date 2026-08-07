@@ -1,5 +1,6 @@
 import { useScreenScroll } from "@/components/HeaderScroll";
 import Colors from "@/constants/Colors";
+import * as Application from "expo-application";
 import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -38,7 +39,9 @@ export default function About() {
 
                 <Text style={styles.appName}>ReadWiki</Text>
 
-                <Text style={styles.version}>v1.0.0</Text>
+                <Text style={styles.version}>
+                    v{Application.nativeApplicationVersion}
+                </Text>
 
                 <Pressable
                     style={styles.linkChip}
