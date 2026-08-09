@@ -5,7 +5,7 @@ import Colors from "@/constants/Colors";
 import { getFeaturedData } from "@/services/wikipedia";
 import { stripHtml } from "@/utils/html";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,11 +17,7 @@ const News = () => {
     const [news, setNews] = useState<any[]>([]);
     const onScroll = useScreenScroll();
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const data = await getFeaturedData();
             setNews(data.news || []);
@@ -30,7 +26,11 @@ const News = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     if (loading) {
         return (

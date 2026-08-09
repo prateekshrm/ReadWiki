@@ -1,15 +1,17 @@
 import { useScreenScroll } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
+import NoInternetView, { NoInternetBanner } from "@/components/NoInternetView";
 import RichText from "@/components/RichText";
 import Colors from "@/constants/Colors";
+import useNetworkStatus from "@/hooks/useNetworkStatus";
+import { addToHistory } from "@/services/articleHistory";
 import { parseArticle, type Block } from "@/services/articleParser";
 import { usePreferences } from "@/services/preferences";
-import { addToHistory } from "@/services/articleHistory";
 import { toggleSavedArticle, useIsSaved } from "@/services/savedArticles";
 import { getArticleSummary, getFullArticle } from "@/services/wikipedia";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import RemixIcon from "react-native-remix-icon";
@@ -111,22 +113,11 @@ const Article = () => {
     const [meta, setMeta] = useState<ArticleMeta | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (article) {
-            loadArticle();
-        }
-    }, [article]);
+    const isConnected = useNetworkStatus();
+    const prevConnectedRef = useRef<boolean | null>(null);
 
-    // Once we know the article, show the save button in the header.
-    useEffect(() => {
-        if (meta) {
-            navigation.setOptions({
-                headerRight: () => <HeaderRight meta={meta} />,
-            });
-        }
-    }, [meta, navigation]);
-
-    const loadArticle = async () => {
+    const loadArticle = useCallback(async () => {
+        if (!article) return;
         try {
             // Fetch the summary (title / lead image) and the full HTML together.
             const [summary, html] = await Promise.all([
@@ -134,42 +125,70 @@ const Article = () => {
                 getFullArticle(article),
             ]);
 
-            // Prefer the full-resolution image; fall back to the thumbnail.
-            // Both carry their own width/height for the aspect ratio.
-            const hero = summary?.originalimage ?? summary?.thumbnail;
+            if (summary || html) {
+                // Prefer the full-resolution image; fall back to the thumbnail.
+                // Both carry their own width/height for the aspect ratio.
+                const hero = summary?.originalimage ?? summary?.thumbnail;
 
-            const articleMeta = {
-                title: summary?.title ?? article,
-                description: summary?.description ?? summary?.extract,
-                thumbnail: summary?.thumbnail?.source,
-                heroImage: hero?.source,
-                heroWidth: hero?.width,
-                heroHeight: hero?.height,
-            };
+                const articleMeta = {
+                    title: summary?.title ?? article,
+                    description: summary?.description ?? summary?.extract,
+                    thumbnail: summary?.thumbnail?.source,
+                    heroImage: hero?.source,
+                    heroWidth: hero?.width,
+                    heroHeight: hero?.height,
+                };
 
-            setMeta(articleMeta);
+                setMeta(articleMeta);
 
-            // Track this article in reading history.
-            addToHistory({
-                title: articleMeta.title,
-                thumbnail: articleMeta.thumbnail,
-                readAt: Date.now(),
-            });
+                // Track this article in reading history.
+                addToHistory({
+                    title: articleMeta.title,
+                    thumbnail: articleMeta.thumbnail,
+                    readAt: Date.now(),
+                });
 
-            if (html) {
-                setBlocks(parseArticle(html));
+                if (html) {
+                    setBlocks(parseArticle(html));
+                }
             }
         } catch (error) {
             console.log("Failed to load article:", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [article]);
+
+    useEffect(() => {
+        loadArticle();
+    }, [loadArticle]);
+
+    // Refetch when internet arrives
+    useEffect(() => {
+        if (prevConnectedRef.current === false && isConnected === true) {
+            setLoading(true);
+            loadArticle();
+        }
+        prevConnectedRef.current = isConnected;
+    }, [isConnected, loadArticle]);
 
     if (loading) {
         return (
             <View style={styles.loader}>
                 <Loader />
+            </View>
+        );
+    }
+
+    if (!meta && blocks.length === 0) {
+        return (
+            <View style={styles.container}>
+                <NoInternetView
+                    onRetry={() => {
+                        setLoading(true);
+                        loadArticle();
+                    }}
+                />
             </View>
         );
     }
@@ -281,6 +300,11 @@ const Article = () => {
                 ListHeaderComponent={
                     meta ? (
                         <View style={styles.header}>
+                            {!isConnected && (
+                                <View style={{ paddingTop: insets.top + 40 }}>
+                                    <NoInternetBanner />
+                                </View>
+                            )}
                             {!!meta.heroImage && (
                                 <Pressable
                                     onPress={() => openImage(meta.heroImage!)}

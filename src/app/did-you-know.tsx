@@ -3,7 +3,7 @@ import { useScreenScroll } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
 import Colors from "@/constants/Colors";
 import { getFeaturedData } from "@/services/wikipedia";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,11 +15,7 @@ const DidYouKnow = () => {
     const [facts, setFacts] = useState<any[]>([]);
     const onScroll = useScreenScroll();
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const data = await getFeaturedData();
             setFacts(data.dyk || []);
@@ -28,7 +24,11 @@ const DidYouKnow = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     if (loading) {
         return (

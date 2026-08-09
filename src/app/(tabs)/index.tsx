@@ -4,15 +4,17 @@ import DidYouKnowCard from "@/components/DidYouKnowCard";
 import { useSolidHeader } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
 import NewsCard from "@/components/NewsCard";
+import NoInternetView, { NoInternetBanner } from "@/components/NoInternetView";
 import OnThisDayEvent from "@/components/OnThisDayEvent";
 import SectionButton from "@/components/SectionButton";
 import Colors from "@/constants/Colors";
+import useNetworkStatus from "@/hooks/useNetworkStatus";
 import { getFeaturedData } from "@/services/wikipedia";
 import { stripHtml } from "@/utils/html";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import RemixIcon from "react-native-remix-icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,26 +28,40 @@ const Home = () => {
     const [facts, setFacts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    const isConnected = useNetworkStatus();
+    const prevConnectedRef = useRef<boolean | null>(null);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const data = await getFeaturedData();
 
-            setFeaturedArticle(data.tfa);
-            setTrendingArticles(data.mostread?.articles.slice(0, 3) || []);
-            setImageOfTheDay(data.image);
-            setNews(data.news?.slice(0, 3) || []);
-            setOnThisDayArticles(data.onthisday?.slice(0, 3) || []);
-            setFacts(data.dyk?.slice(0, 3) || []);
+            if (data) {
+                setFeaturedArticle(data.tfa ?? null);
+                setTrendingArticles(data.mostread?.articles.slice(0, 3) || []);
+                setImageOfTheDay(data.image ?? null);
+                setNews(data.news?.slice(0, 3) || []);
+                setOnThisDayArticles(data.onthisday?.slice(0, 3) || []);
+                setFacts(data.dyk?.slice(0, 3) || []);
+            }
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // Refetch when internet arrives
+    useEffect(() => {
+        if (prevConnectedRef.current === false && isConnected === true) {
+            setLoading(true);
+            loadData();
+        }
+        prevConnectedRef.current = isConnected;
+    }, [isConnected, loadData]);
 
     const insets = useSafeAreaInsets();
 
@@ -53,23 +69,42 @@ const Home = () => {
     // in its scrolled state (white logo + gradient + light status bar) always.
     useSolidHeader();
 
-    return (
-        <View style={styles.container}>
-            {loading ? (
+    if (loading) {
+        return (
+            <View style={styles.container}>
                 <View style={styles.loaderContainer}>
                     <Loader />
                 </View>
-            ) : (
-                <ScrollView
-                    contentContainerStyle={[
-                        styles.sectionContainer,
-                        {
-                            paddingBottom: insets.bottom + 80,
-                        },
-                    ]}
-                    showsVerticalScrollIndicator={false}
-                    scrollEventThrottle={16}
-                >
+            </View>
+        );
+    }
+
+    if (!featuredArticle) {
+        return (
+            <View style={styles.container}>
+                <NoInternetView
+                    onRetry={() => {
+                        setLoading(true);
+                        loadData();
+                    }}
+                />
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <ScrollView
+                contentContainerStyle={[
+                    styles.sectionContainer,
+                    {
+                        paddingBottom: insets.bottom + 80,
+                    },
+                ]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+            >
+                {!isConnected && <NoInternetBanner />}
                     <View style={styles.featuredCard}>
                         <Image
                             source={
@@ -364,7 +399,6 @@ const Home = () => {
                         </View>
                     )}
                 </ScrollView>
-            )}
         </View>
     );
 };
