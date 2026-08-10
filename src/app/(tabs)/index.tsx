@@ -4,7 +4,7 @@ import DidYouKnowCard from "@/components/DidYouKnowCard";
 import { useSolidHeader } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
 import NewsCard from "@/components/NewsCard";
-import NoInternetView, { NoInternetBanner } from "@/components/NoInternetView";
+import NoInternetView from "@/components/NoInternetView";
 import OnThisDayEvent from "@/components/OnThisDayEvent";
 import SectionButton from "@/components/SectionButton";
 import Colors from "@/constants/Colors";
@@ -104,8 +104,7 @@ const Home = () => {
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
             >
-                {!isConnected && <NoInternetBanner />}
-                    <View style={styles.featuredCard}>
+                <View style={styles.featuredCard}>
                         <Image
                             source={
                                 featuredArticle?.thumbnail?.source

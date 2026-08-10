@@ -1,6 +1,6 @@
 import { useScreenScroll } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
-import NoInternetView, { NoInternetBanner } from "@/components/NoInternetView";
+import NoInternetView from "@/components/NoInternetView";
 import RichText from "@/components/RichText";
 import Colors from "@/constants/Colors";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
@@ -300,11 +300,6 @@ const Article = () => {
                 ListHeaderComponent={
                     meta ? (
                         <View style={styles.header}>
-                            {!isConnected && (
-                                <View style={{ paddingTop: insets.top + 40 }}>
-                                    <NoInternetBanner />
-                                </View>
-                            )}
                             {!!meta.heroImage && (
                                 <Pressable
                                     onPress={() => openImage(meta.heroImage!)}

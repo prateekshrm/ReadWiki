@@ -8,8 +8,7 @@ export default function useNetworkAlert() {
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener((state) => {
-            const connected =
-                state.isConnected && state.isInternetReachable !== false;
+            const connected = Boolean(state.isConnected);
 
             if (connected) {
                 alertVisible.current = false;

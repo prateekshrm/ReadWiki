@@ -7,16 +7,12 @@ export function useNetworkStatus() {
     useEffect(() => {
         // Get initial state
         NetInfo.fetch().then((state) => {
-            const connected =
-                state.isConnected !== false && state.isInternetReachable !== false;
-            setIsConnected(connected);
+            setIsConnected(Boolean(state.isConnected));
         });
 
         // Subscribe to network changes
         const unsubscribe = NetInfo.addEventListener((state) => {
-            const connected =
-                state.isConnected !== false && state.isInternetReachable !== false;
-            setIsConnected(connected);
+            setIsConnected(Boolean(state.isConnected));
         });
 
         return unsubscribe;

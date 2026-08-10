@@ -10,20 +10,6 @@ interface NoInternetViewProps {
     description?: string;
 }
 
-export function NoInternetBanner() {
-    return (
-        <View style={styles.bannerContainer}>
-            <RemixIcon
-                name="wifi-off-line"
-                size={14}
-                color={Colors.textInverse}
-                fallback={null}
-            />
-            <Text style={styles.bannerText}>No Internet Connection</Text>
-        </View>
-    );
-}
-
 export default function NoInternetView({
     onRetry,
     title = "No Internet Connection",
@@ -79,17 +65,8 @@ const styles = StyleSheet.create({
         width: "100%",
         maxWidth: 340,
         alignItems: "center",
-        backgroundColor: Colors.surface,
         paddingVertical: 32,
         paddingHorizontal: 24,
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        shadowColor: Colors.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 2,
     },
     iconContainer: {
         width: 72,
@@ -99,8 +76,6 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 20,
-        borderWidth: 1,
-        borderColor: Colors.border,
     },
     title: {
         fontSize: 22,
@@ -119,22 +94,5 @@ const styles = StyleSheet.create({
     },
     buttonWrapper: {
         alignItems: "center",
-    },
-    bannerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        backgroundColor: Colors.primary,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        marginHorizontal: 16,
-        marginTop: 12,
-        borderRadius: 12,
-    },
-    bannerText: {
-        fontSize: 13,
-        fontFamily: "DMSans-Medium",
-        color: Colors.textInverse,
     },
 });
