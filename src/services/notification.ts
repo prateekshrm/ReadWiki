@@ -77,6 +77,45 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     }
 };
 
+const getTriggerTimestampMs = (trigger: any): number | null => {
+    if (!trigger) return null;
+
+    if (typeof trigger === "number") {
+        return trigger < 1e11 ? trigger * 1000 : trigger;
+    }
+
+    if (trigger.dateComponents) {
+        const { year, month, day, hour, minute, second } = trigger.dateComponents;
+        if (year != null && month != null && day != null) {
+            return new Date(
+                year,
+                month - 1,
+                day,
+                hour ?? 0,
+                minute ?? 0,
+                second ?? 0,
+            ).getTime();
+        }
+    }
+
+    const val = trigger.date ?? trigger.timestamp ?? trigger.value;
+
+    if (typeof val === "number") {
+        return val < 1e11 ? val * 1000 : val;
+    }
+
+    if (typeof val === "string") {
+        const parsed = new Date(val).getTime();
+        return isNaN(parsed) ? null : parsed;
+    }
+
+    if (val instanceof Date) {
+        return val.getTime();
+    }
+
+    return null;
+};
+
 export const scheduleTomorrowFeaturedNotification = async () => {
     if (isExpoGo() || Platform.OS === "web") {
         return;
@@ -93,43 +132,44 @@ export const scheduleTomorrowFeaturedNotification = async () => {
 
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0); // 9:00 AM next day
 
-        const hasNotification = scheduled.some((notification) => {
-            if (notification.content?.data?.type !== "featured-article") {
-                return false;
-            }
+        const featuredNotifications = scheduled.filter(
+            (n) => n.content?.data?.type === "featured-article",
+        );
 
-            const trigger = notification.trigger as any;
-            if (!trigger) {
-                return true;
-            }
+        let validScheduledCount = 0;
+        const notificationsToCancel: string[] = [];
 
-            let triggerMs: number | null = null;
-            const val = trigger.date ?? trigger.timestamp ?? trigger.value;
-
-            if (typeof val === "number") {
-                triggerMs = val;
-            } else if (typeof val === "string") {
-                triggerMs = new Date(val).getTime();
-            } else if (val instanceof Date) {
-                triggerMs = val.getTime();
-            } else if (typeof trigger === "number") {
-                triggerMs = trigger;
-            }
+        for (const notification of featuredNotifications) {
+            const triggerMs = getTriggerTimestampMs(notification.trigger);
+            let isTomorrow9AM = false;
 
             if (triggerMs != null && !isNaN(triggerMs)) {
                 const dateObj = new Date(triggerMs);
-                return (
+                isTomorrow9AM =
                     dateObj.getFullYear() === tomorrow.getFullYear() &&
                     dateObj.getMonth() === tomorrow.getMonth() &&
-                    dateObj.getDate() === tomorrow.getDate()
-                );
+                    dateObj.getDate() === tomorrow.getDate();
             }
 
-            return true;
-        });
+            if (isTomorrow9AM && validScheduledCount === 0) {
+                // Keep the single valid scheduled notification for tomorrow
+                validScheduledCount++;
+            } else {
+                // Collect old, stale, or duplicate notifications for cancellation
+                if (notification.identifier) {
+                    notificationsToCancel.push(notification.identifier);
+                }
+            }
+        }
 
-        if (hasNotification) {
+        // Cancel duplicates / stale notifications
+        for (const id of notificationsToCancel) {
+            await Notifications.cancelScheduledNotificationAsync(id);
+        }
+
+        if (validScheduledCount > 0) {
             console.log(
                 "Tomorrow's featured article notification is already scheduled.",
             );
@@ -145,10 +185,6 @@ export const scheduleTomorrowFeaturedNotification = async () => {
             return;
         }
 
-        const triggerDate = new Date();
-        triggerDate.setDate(triggerDate.getDate() + 1);
-        triggerDate.setHours(9, 0, 0, 0); // 9:00 AM next day
-
         await Notifications.scheduleNotificationAsync({
             content: {
                 title: title,
@@ -160,11 +196,11 @@ export const scheduleTomorrowFeaturedNotification = async () => {
             },
             trigger: {
                 type: Notifications.SchedulableTriggerInputTypes.DATE,
-                date: triggerDate,
+                date: tomorrow,
             },
         });
 
-        console.log("Scheduled notification for", triggerDate);
+        console.log("Scheduled notification for", tomorrow);
     } catch (error) {
         console.warn(
             "Failed to schedule tomorrow featured notification:",
