@@ -1,9 +1,15 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Notifications from "expo-notifications";
+import { Href, router } from "expo-router";
 import { Platform } from "react-native";
 
 import { getPreferences, setPreference } from "./preferences";
 import { getTomorrowFeaturedArticleTitle } from "./wikipedia";
+
+const FEATURED_NOTIFICATION_DATE_KEY = "featuredNotificationDate";
+const FEATURED_NOTIFICATION_MIGRATION_KEY = "featuredNotificationMigrationDone";
+const FEATURED_NOTIFICATION_ID = "featured-article";
 
 export const isExpoGo = (): boolean => {
     return (
@@ -26,6 +32,20 @@ if (!isExpoGo() && Platform.OS !== "web") {
         console.warn("Failed to set notification handler:", error);
     }
 }
+
+export const getLocalYYYYMMDD = (date: Date = new Date()): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+export const getTomorrow9AM = (): Date => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    return tomorrow;
+};
 
 export const getNotificationPermissionStatus = async (): Promise<
     Notifications.PermissionStatus | "unsupported"
@@ -77,43 +97,47 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     }
 };
 
-const getTriggerTimestampMs = (trigger: any): number | null => {
-    if (!trigger) return null;
-
-    if (typeof trigger === "number") {
-        return trigger < 1e11 ? trigger * 1000 : trigger;
-    }
-
-    if (trigger.dateComponents) {
-        const { year, month, day, hour, minute, second } = trigger.dateComponents;
-        if (year != null && month != null && day != null) {
-            return new Date(
-                year,
-                month - 1,
-                day,
-                hour ?? 0,
-                minute ?? 0,
-                second ?? 0,
-            ).getTime();
+const performOneTimeMigration = async () => {
+    try {
+        const migrationDone = await AsyncStorage.getItem(
+            FEATURED_NOTIFICATION_MIGRATION_KEY,
+        );
+        if (migrationDone === "true") {
+            return;
         }
+
+        const scheduled =
+            await Notifications.getAllScheduledNotificationsAsync();
+        for (const notification of scheduled) {
+            if (notification.content?.data?.type === "featured-article") {
+                if (notification.identifier) {
+                    await Notifications.cancelScheduledNotificationAsync(
+                        notification.identifier,
+                    );
+                }
+            }
+        }
+
+        try {
+            await Notifications.cancelScheduledNotificationAsync(
+                FEATURED_NOTIFICATION_ID,
+            );
+        } catch {
+            // Ignore error if notification identifier doesn't exist
+        }
+
+        await AsyncStorage.removeItem(FEATURED_NOTIFICATION_DATE_KEY);
+        await AsyncStorage.setItem(
+            FEATURED_NOTIFICATION_MIGRATION_KEY,
+            "true",
+        );
+        console.log("One-time notification migration completed.");
+    } catch (error) {
+        console.warn(
+            "Failed to perform notification migration cleanup:",
+            error,
+        );
     }
-
-    const val = trigger.date ?? trigger.timestamp ?? trigger.value;
-
-    if (typeof val === "number") {
-        return val < 1e11 ? val * 1000 : val;
-    }
-
-    if (typeof val === "string") {
-        const parsed = new Date(val).getTime();
-        return isNaN(parsed) ? null : parsed;
-    }
-
-    if (val instanceof Date) {
-        return val.getTime();
-    }
-
-    return null;
 };
 
 export const scheduleTomorrowFeaturedNotification = async () => {
@@ -127,53 +151,31 @@ export const scheduleTomorrowFeaturedNotification = async () => {
             return;
         }
 
-        const scheduled =
-            await Notifications.getAllScheduledNotificationsAsync();
+        await performOneTimeMigration();
 
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(9, 0, 0, 0); // 9:00 AM next day
+        const tomorrowDate = getTomorrow9AM();
+        const tomorrowStr = getLocalYYYYMMDD(tomorrowDate);
 
-        const featuredNotifications = scheduled.filter(
-            (n) => n.content?.data?.type === "featured-article",
+        const storedDate = await AsyncStorage.getItem(
+            FEATURED_NOTIFICATION_DATE_KEY,
         );
 
-        let validScheduledCount = 0;
-        const notificationsToCancel: string[] = [];
-
-        for (const notification of featuredNotifications) {
-            const triggerMs = getTriggerTimestampMs(notification.trigger);
-            let isTomorrow9AM = false;
-
-            if (triggerMs != null && !isNaN(triggerMs)) {
-                const dateObj = new Date(triggerMs);
-                isTomorrow9AM =
-                    dateObj.getFullYear() === tomorrow.getFullYear() &&
-                    dateObj.getMonth() === tomorrow.getMonth() &&
-                    dateObj.getDate() === tomorrow.getDate();
-            }
-
-            if (isTomorrow9AM && validScheduledCount === 0) {
-                // Keep the single valid scheduled notification for tomorrow
-                validScheduledCount++;
-            } else {
-                // Collect old, stale, or duplicate notifications for cancellation
-                if (notification.identifier) {
-                    notificationsToCancel.push(notification.identifier);
-                }
-            }
-        }
-
-        // Cancel duplicates / stale notifications
-        for (const id of notificationsToCancel) {
-            await Notifications.cancelScheduledNotificationAsync(id);
-        }
-
-        if (validScheduledCount > 0) {
+        // Case 2: Stored date is tomorrow -> Do nothing (idempotent)
+        if (storedDate === tomorrowStr) {
             console.log(
                 "Tomorrow's featured article notification is already scheduled.",
             );
             return;
+        }
+
+        // Case 1 (no date), Case 3 (storedDate === todayStr), Case 4 (storedDate < todayStr):
+        // Cancel existing scheduled featured-article notification as safety measure
+        try {
+            await Notifications.cancelScheduledNotificationAsync(
+                FEATURED_NOTIFICATION_ID,
+            );
+        } catch {
+            // Ignore if identifier not found
         }
 
         const title = await getTomorrowFeaturedArticleTitle();
@@ -186,6 +188,7 @@ export const scheduleTomorrowFeaturedNotification = async () => {
         }
 
         await Notifications.scheduleNotificationAsync({
+            identifier: FEATURED_NOTIFICATION_ID,
             content: {
                 title: title,
                 body: "Tap to read today's featured article.",
@@ -196,11 +199,17 @@ export const scheduleTomorrowFeaturedNotification = async () => {
             },
             trigger: {
                 type: Notifications.SchedulableTriggerInputTypes.DATE,
-                date: tomorrow,
+                date: tomorrowDate,
             },
         });
 
-        console.log("Scheduled notification for", tomorrow);
+        await AsyncStorage.setItem(
+            FEATURED_NOTIFICATION_DATE_KEY,
+            tomorrowStr,
+        );
+        console.log(
+            `Scheduled notification for tomorrow (${tomorrowStr} 9:00 AM) with title: ${title}`,
+        );
     } catch (error) {
         console.warn(
             "Failed to schedule tomorrow featured notification:",
@@ -228,7 +237,7 @@ export const initializeNotifications = async () => {
                 await scheduleTomorrowFeaturedNotification();
             }
         } else {
-            // Never ask for permission again on launch, but check OS status and schedule if granted
+            // Check OS status and schedule if granted
             const status = await getNotificationPermissionStatus();
             if (status !== "unsupported") {
                 const isGranted =
@@ -244,6 +253,76 @@ export const initializeNotifications = async () => {
         }
     } catch (error) {
         console.warn("Failed to initialize notifications:", error);
+    }
+};
+
+// --- Cold-start & notification tap response navigation manager ---
+let pendingHref: Href | null = null;
+let isRouterReady = false;
+const handledResponseIdentifiers = new Set<string>();
+let isListenerRegistered = false;
+
+const processPendingNavigation = () => {
+    if (isRouterReady && pendingHref) {
+        const targetHref = pendingHref;
+        pendingHref = null; // Clear first to prevent duplicate navigation
+        router.push(targetHref);
+    }
+};
+
+export const setRouterReady = (ready: boolean) => {
+    isRouterReady = ready;
+    if (ready) {
+        processPendingNavigation();
+    }
+};
+
+export const handleNotificationResponse = (
+    response: Notifications.NotificationResponse | null,
+) => {
+    if (!response?.notification) return;
+
+    const identifier = response.notification.request.identifier;
+    if (handledResponseIdentifiers.has(identifier)) {
+        return;
+    }
+
+    const data = response.notification.request.content.data;
+    if (
+        data &&
+        data.type === "featured-article" &&
+        typeof data.href === "string"
+    ) {
+        handledResponseIdentifiers.add(identifier);
+        pendingHref = data.href as Href;
+        try {
+            Notifications.clearLastNotificationResponse();
+        } catch {
+            // Ignore if clearing last response is unsupported
+        }
+        processPendingNavigation();
+    }
+};
+
+export const registerNotificationResponseListener = () => {
+    if (isExpoGo() || Platform.OS === "web") return;
+    if (isListenerRegistered) return;
+    isListenerRegistered = true;
+
+    try {
+        Notifications.addNotificationResponseReceivedListener((response) => {
+            handleNotificationResponse(response);
+        });
+
+        const lastResponse = Notifications.getLastNotificationResponse();
+        if (lastResponse) {
+            handleNotificationResponse(lastResponse);
+        }
+    } catch (error) {
+        console.warn(
+            "Failed to register notification response listener:",
+            error,
+        );
     }
 };
 
@@ -304,7 +383,9 @@ export const cancelAllNotifications = async () => {
     if (isExpoGo() || Platform.OS === "web") return;
     try {
         await Notifications.cancelAllScheduledNotificationsAsync();
+        await AsyncStorage.removeItem(FEATURED_NOTIFICATION_DATE_KEY);
     } catch (error) {
         console.warn("Failed to cancel notifications:", error);
     }
 };
+

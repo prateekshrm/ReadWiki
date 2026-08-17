@@ -4,8 +4,6 @@
 
 # ReadWiki
 
-<img src="https://img.shields.io/badge/%F0%9F%94%B4%20Work%20In%20Progress-000000?style=for-the-badge"/>
-
 <p align="left">
 <img src="https://img.shields.io/badge/React Native-000000?style=for-the-badge&logo=react&logoColor=white"/>
 <img src="https://img.shields.io/badge/Expo-000000?style=for-the-badge&logo=expo&logoColor=white"/>

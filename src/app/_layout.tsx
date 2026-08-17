@@ -1,13 +1,17 @@
 import Header from "@/components/Header";
 import { HeaderScrollProvider } from "@/components/HeaderScroll";
 import useNetworkAlert from "@/hooks/useNetworkAlert";
-import { initializeNotifications, isExpoGo } from "@/services/notification";
+import {
+    initializeNotifications,
+    isExpoGo,
+    registerNotificationResponseListener,
+    setRouterReady,
+} from "@/services/notification";
 import { usePreferences } from "@/services/preferences";
 import { useFonts } from "expo-font";
-import * as Notifications from "expo-notifications";
-import { Href, router, Stack } from "expo-router";
+import { router, Stack, useRootNavigationState } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Platform } from "react-native";
 
 import { DMSans_400Regular } from "@expo-google-fonts/dm-sans/400Regular";
@@ -22,6 +26,8 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
     useNetworkAlert();
     const preferences = usePreferences();
+    const rootNavigationState = useRootNavigationState();
+    const isNavigationReady = Boolean(rootNavigationState?.key);
 
     const [loaded, error] = useFonts({
         "DMSans-Regular": DMSans_400Regular,
@@ -44,68 +50,18 @@ export default function RootLayout() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loaded, error]);
 
-    const lastNotificationResponse =
-        isExpoGo() || Platform.OS === "web"
-            ? null
-            : Notifications.useLastNotificationResponse();
-
-    const handledNotificationId = useRef<string | null>(null);
-
     useEffect(() => {
         if (!isExpoGo() && Platform.OS !== "web") {
+            registerNotificationResponseListener();
             void initializeNotifications();
         }
     }, []);
 
-    const handleNotificationResponse = (
-        response: Notifications.NotificationResponse,
-    ) => {
-        if (!response?.notification) return;
-        const { notification } = response;
-
-        // Prevent handling the same notification twice
-        if (handledNotificationId.current === notification.request.identifier) {
-            return;
-        }
-
-        handledNotificationId.current = notification.request.identifier;
-
-        const data = notification.request.content.data;
-
-        if (
-            data &&
-            data.type === "featured-article" &&
-            typeof data.href === "string"
-        ) {
-            router.push(data.href as Href);
-        }
-    };
-
-    // App launched from a notification
     useEffect(() => {
-        if (lastNotificationResponse) {
-            handleNotificationResponse(lastNotificationResponse);
+        if (loaded && isNavigationReady) {
+            setRouterReady(true);
         }
-    }, [lastNotificationResponse]);
-
-    // App already running (foreground/background)
-    useEffect(() => {
-        if (isExpoGo() || Platform.OS === "web") return;
-
-        try {
-            const subscription =
-                Notifications.addNotificationResponseReceivedListener(
-                    handleNotificationResponse,
-                );
-
-            return () => subscription.remove();
-        } catch (error) {
-            console.warn(
-                "Failed to add notification response listener:",
-                error,
-            );
-        }
-    }, []);
+    }, [loaded, isNavigationReady]);
 
     if (!loaded && !error) {
         return null;
