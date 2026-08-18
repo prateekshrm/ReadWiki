@@ -105,137 +105,259 @@ const Home = () => {
                 scrollEventThrottle={16}
             >
                 <View style={styles.featuredCard}>
-                        <Image
-                            source={
-                                featuredArticle?.thumbnail?.source
-                                    ? featuredArticle.thumbnail.source
-                                    : require("../../../assets/fallback.jpg")
-                            }
-                            style={styles.featuredCardImage}
-                            contentFit="cover"
-                            blurRadius={
-                                featuredArticle?.thumbnail?.source ? 0 : 40
-                            }
-                        />
-                        <LinearGradient
-                            colors={["rgba(0,0,0,0.45)", "transparent"]}
-                            style={styles.featuredCardTopGradient}
-                        />
+                    <Image
+                        source={
+                            featuredArticle?.thumbnail?.source
+                                ? featuredArticle.thumbnail.source
+                                : require("../../../assets/fallback.jpg")
+                        }
+                        style={styles.featuredCardImage}
+                        contentFit="cover"
+                        blurRadius={
+                            featuredArticle?.thumbnail?.source ? 0 : 100
+                        }
+                    />
+                    <LinearGradient
+                        colors={["rgba(0,0,0,0.45)", "transparent"]}
+                        style={styles.featuredCardTopGradient}
+                    />
 
-                        <LinearGradient
-                            colors={[
-                                "transparent",
-                                "rgba(0,0,0,0.4)",
-                                "rgba(0,0,0,0.9)",
-                            ]}
-                            locations={[0, 0.5, 1]}
-                            style={styles.featuredCardOverlay}
-                        />
+                    <LinearGradient
+                        colors={[
+                            "transparent",
+                            "rgba(0,0,0,0.4)",
+                            "rgba(0,0,0,0.9)",
+                        ]}
+                        locations={[0, 0.5, 1]}
+                        style={styles.featuredCardOverlay}
+                    />
 
-                        <View style={styles.featuredCardContent}>
-                            <View style={styles.featuredCardBadge}>
-                                <RemixIcon
-                                    name="star-fill"
-                                    size={13}
-                                    color={Colors.textInverse}
-                                    fallback={null}
-                                />
-                                <Text style={styles.featuredCardBadgeText}>
-                                    Featured Article
-                                </Text>
-                            </View>
-
-                            <Text
-                                style={styles.featuredCardTitle}
-                                numberOfLines={2}
-                            >
-                                {featuredArticle?.normalizedtitle ??
-                                    featuredArticle?.titles.normalized}
+                    <View style={styles.featuredCardContent}>
+                        <View style={styles.featuredCardBadge}>
+                            <RemixIcon
+                                name="star-fill"
+                                size={13}
+                                color={Colors.textInverse}
+                                fallback={null}
+                            />
+                            <Text style={styles.featuredCardBadgeText}>
+                                Featured Article
                             </Text>
-
-                            {!!featuredArticle?.extract && (
-                                <Text
-                                    style={styles.featuredCardDescription}
-                                    numberOfLines={4}
-                                >
-                                    {featuredArticle.extract == ""
-                                        ? featuredArticle.description
-                                        : featuredArticle.extract}
-                                </Text>
-                            )}
-                            <View style={{ alignItems: "flex-start" }}>
-                                <Button
-                                    text="Read More"
-                                    iconName="arrow-right-s-line"
-                                    variant="primary"
-                                    mode="light"
-                                    onPress={() =>
-                                        router.push({
-                                            pathname: "/article/[article]",
-                                            params: {
-                                                article: featuredArticle?.title,
-                                            },
-                                        })
-                                    }
-                                />
-                            </View>
                         </View>
-                    </View>
-                    {trendingArticles.length > 0 && (
-                        <View style={styles.section}>
-                            <View>
-                                <Text style={styles.sectionTitle}>
-                                    Trending
-                                </Text>
-                            </View>
-                            <View style={styles.sectionContent}>
-                                {trendingArticles.map(
-                                    (item: any, index: number) => (
-                                        <ArticleCard
-                                            key={item.titles.normalized + index}
-                                            tag={`${item.views.toLocaleString()} views`}
-                                            title={item.titles.normalized}
-                                            subtitle={item.extract}
-                                            image={item.thumbnail?.source}
-                                            onPress={() =>
-                                                router.push({
-                                                    pathname:
-                                                        "/article/[article]",
-                                                    params: {
-                                                        article:
-                                                            item.titles
-                                                                .normalized,
-                                                    },
-                                                })
-                                            }
-                                        />
-                                    ),
-                                )}
-                            </View>
 
-                            <SectionButton
-                                text="More Trending Articles"
-                                onPress={() => router.navigate("/trending")}
+                        <Text
+                            style={styles.featuredCardTitle}
+                            numberOfLines={2}
+                        >
+                            {featuredArticle?.normalizedtitle ??
+                                featuredArticle?.titles.normalized}
+                        </Text>
+
+                        {!!featuredArticle?.extract && (
+                            <Text
+                                style={styles.featuredCardDescription}
+                                numberOfLines={4}
+                            >
+                                {featuredArticle.extract == ""
+                                    ? featuredArticle.description
+                                    : featuredArticle.extract}
+                            </Text>
+                        )}
+                        <View style={{ alignItems: "flex-start" }}>
+                            <Button
+                                text="Read More"
+                                iconName="arrow-right-s-line"
+                                variant="primary"
+                                mode="light"
+                                onPress={() =>
+                                    router.push({
+                                        pathname: "/article/[article]",
+                                        params: {
+                                            article: featuredArticle?.title,
+                                        },
+                                    })
+                                }
                             />
                         </View>
-                    )}
-                    {news.length > 0 && (
-                        <View style={styles.section}>
-                            <View>
-                                <Text style={styles.sectionTitle}>
-                                    In the News
-                                </Text>
+                    </View>
+                </View>
+                {trendingArticles.length > 0 && (
+                    <View style={styles.section}>
+                        <View>
+                            <Text style={styles.sectionTitle}>Trending</Text>
+                        </View>
+                        <View style={styles.sectionContent}>
+                            {trendingArticles.map(
+                                (item: any, index: number) => (
+                                    <ArticleCard
+                                        key={item.titles.normalized + index}
+                                        tag={`${item.views.toLocaleString()} views`}
+                                        title={item.titles.normalized}
+                                        subtitle={item.extract}
+                                        image={item.thumbnail?.source}
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/article/[article]",
+                                                params: {
+                                                    article:
+                                                        item.titles.normalized,
+                                                },
+                                            })
+                                        }
+                                    />
+                                ),
+                            )}
+                        </View>
+
+                        <SectionButton
+                            text="More Trending Articles"
+                            onPress={() => router.navigate("/trending")}
+                        />
+                    </View>
+                )}
+                {news.length > 0 && (
+                    <View style={styles.section}>
+                        <View>
+                            <Text style={styles.sectionTitle}>In the News</Text>
+                        </View>
+                        <View style={styles.sectionContent}>
+                            {news.map((item: any, index: number) => {
+                                const article = item.links?.[0];
+
+                                return (
+                                    <NewsCard
+                                        key={`${item.story}-${index}`}
+                                        story={stripHtml(item.story)}
+                                        title={article?.normalizedtitle}
+                                        image={article?.thumbnail?.source}
+                                        onPress={() =>
+                                            article &&
+                                            router.push({
+                                                pathname: "/article/[article]",
+                                                params: {
+                                                    article:
+                                                        article.normalizedtitle,
+                                                },
+                                            })
+                                        }
+                                    />
+                                );
+                            })}
+                        </View>
+
+                        <SectionButton
+                            text="More News"
+                            onPress={() => router.navigate("/news")}
+                        />
+                    </View>
+                )}
+                {imageOfTheDay && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                            Image of the Day
+                        </Text>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.imageCard,
+                                pressed && styles.cardPressed,
+                            ]}
+                            onPress={() => {
+                                router.navigate({
+                                    pathname: "/image/[image]",
+                                    params: {
+                                        image: imageOfTheDay.thumbnail.source,
+                                    },
+                                });
+                            }}
+                        >
+                            <Image
+                                source={imageOfTheDay.thumbnail?.source}
+                                style={styles.imageCardImage}
+                                contentFit="cover"
+                            />
+
+                            <LinearGradient
+                                colors={["transparent", "rgba(0,0,0,0.9)"]}
+                                locations={[0.25, 1]}
+                                style={styles.overlayGradient}
+                            />
+
+                            <View style={styles.imageCardContent}>
+                                {!!imageOfTheDay.description?.text && (
+                                    <Text
+                                        style={styles.imageCardCaption}
+                                        numberOfLines={3}
+                                    >
+                                        {imageOfTheDay.description.text}
+                                    </Text>
+                                )}
+
+                                {!!imageOfTheDay.artist?.text && (
+                                    <View style={styles.imageCardByline}>
+                                        <RemixIcon
+                                            name="camera-3-line"
+                                            size={14}
+                                            color="rgba(255,255,255,0.85)"
+                                            fallback={null}
+                                        />
+                                        <Text
+                                            style={styles.imageCardAuthor}
+                                            numberOfLines={1}
+                                        >
+                                            {imageOfTheDay.artist.text}
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
-                            <View style={styles.sectionContent}>
-                                {news.map((item: any, index: number) => {
-                                    const article = item.links?.[0];
+                        </Pressable>
+                    </View>
+                )}
+                {facts.length > 0 && (
+                    <View style={styles.section}>
+                        <View>
+                            <Text style={styles.sectionTitle}>
+                                Did You Know?
+                            </Text>
+                        </View>
+                        <View style={styles.sectionContent}>
+                            {facts.map((item: any, index: number) => {
+                                return (
+                                    <DidYouKnowCard
+                                        text={item.text}
+                                        key={index}
+                                    />
+                                );
+                            })}
+                        </View>
+
+                        <SectionButton
+                            text="More Did You Know"
+                            onPress={() => router.navigate("/did-you-know")}
+                        />
+                    </View>
+                )}
+                {onThisDayArticles.length > 0 && (
+                    <View style={styles.section}>
+                        <View>
+                            <Text style={styles.sectionTitle}>On This Day</Text>
+                        </View>
+                        <View style={styles.sectionContent}>
+                            {onThisDayArticles.map(
+                                (item: any, index: number) => {
+                                    const article = item.pages?.[0];
 
                                     return (
-                                        <NewsCard
-                                            key={`${item.story}-${index}`}
-                                            story={stripHtml(item.story)}
+                                        <OnThisDayEvent
+                                            key={`${item.year}-${index}`}
+                                            year={item.year}
+                                            text={item.text}
                                             title={article?.normalizedtitle}
                                             image={article?.thumbnail?.source}
+                                            isFirst={index === 0}
+                                            isLast={
+                                                index ===
+                                                onThisDayArticles.length - 1
+                                            }
                                             onPress={() =>
                                                 article &&
                                                 router.push({
@@ -249,155 +371,17 @@ const Home = () => {
                                             }
                                         />
                                     );
-                                })}
-                            </View>
-
-                            <SectionButton
-                                text="More News"
-                                onPress={() => router.navigate("/news")}
-                            />
+                                },
+                            )}
                         </View>
-                    )}
-                    {imageOfTheDay && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>
-                                Image of the Day
-                            </Text>
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.imageCard,
-                                    pressed && styles.cardPressed,
-                                ]}
-                                onPress={() => {
-                                    router.navigate({
-                                        pathname: "/image/[image]",
-                                        params: {
-                                            image: imageOfTheDay.thumbnail
-                                                .source,
-                                        },
-                                    });
-                                }}
-                            >
-                                <Image
-                                    source={imageOfTheDay.thumbnail?.source}
-                                    style={styles.imageCardImage}
-                                    contentFit="cover"
-                                />
 
-                                <LinearGradient
-                                    colors={["transparent", "rgba(0,0,0,0.9)"]}
-                                    locations={[0.25, 1]}
-                                    style={styles.overlayGradient}
-                                />
-
-                                <View style={styles.imageCardContent}>
-                                    {!!imageOfTheDay.description?.text && (
-                                        <Text
-                                            style={styles.imageCardCaption}
-                                            numberOfLines={3}
-                                        >
-                                            {imageOfTheDay.description.text}
-                                        </Text>
-                                    )}
-
-                                    {!!imageOfTheDay.artist?.text && (
-                                        <View style={styles.imageCardByline}>
-                                            <RemixIcon
-                                                name="camera-3-line"
-                                                size={14}
-                                                color="rgba(255,255,255,0.85)"
-                                                fallback={null}
-                                            />
-                                            <Text
-                                                style={styles.imageCardAuthor}
-                                                numberOfLines={1}
-                                            >
-                                                {imageOfTheDay.artist.text}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </Pressable>
-                        </View>
-                    )}
-                    {facts.length > 0 && (
-                        <View style={styles.section}>
-                            <View>
-                                <Text style={styles.sectionTitle}>
-                                    Did You Know?
-                                </Text>
-                            </View>
-                            <View style={styles.sectionContent}>
-                                {facts.map((item: any, index: number) => {
-                                    return (
-                                        <DidYouKnowCard
-                                            text={item.text}
-                                            key={index}
-                                        />
-                                    );
-                                })}
-                            </View>
-
-                            <SectionButton
-                                text="More Did You Know"
-                                onPress={() =>
-                                    router.navigate("/did-you-know")
-                                }
-                            />
-                        </View>
-                    )}
-                    {onThisDayArticles.length > 0 && (
-                        <View style={styles.section}>
-                            <View>
-                                <Text style={styles.sectionTitle}>
-                                    On This Day
-                                </Text>
-                            </View>
-                            <View style={styles.sectionContent}>
-                                {onThisDayArticles.map(
-                                    (item: any, index: number) => {
-                                        const article = item.pages?.[0];
-
-                                        return (
-                                            <OnThisDayEvent
-                                                key={`${item.year}-${index}`}
-                                                year={item.year}
-                                                text={item.text}
-                                                title={article?.normalizedtitle}
-                                                image={
-                                                    article?.thumbnail?.source
-                                                }
-                                                isFirst={index === 0}
-                                                isLast={
-                                                    index ===
-                                                    onThisDayArticles.length - 1
-                                                }
-                                                onPress={() =>
-                                                    article &&
-                                                    router.push({
-                                                        pathname:
-                                                            "/article/[article]",
-                                                        params: {
-                                                            article:
-                                                                article.normalizedtitle,
-                                                        },
-                                                    })
-                                                }
-                                            />
-                                        );
-                                    },
-                                )}
-                            </View>
-
-                            <SectionButton
-                                text="More On This Day"
-                                onPress={() =>
-                                    router.navigate("/on-this-day")
-                                }
-                            />
-                        </View>
-                    )}
-                </ScrollView>
+                        <SectionButton
+                            text="More On This Day"
+                            onPress={() => router.navigate("/on-this-day")}
+                        />
+                    </View>
+                )}
+            </ScrollView>
         </View>
     );
 };

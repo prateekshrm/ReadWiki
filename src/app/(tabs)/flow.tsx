@@ -196,7 +196,7 @@ const Flow = () => {
                         }
                         style={styles.background}
                         contentFit="cover"
-                        blurRadius={40}
+                        blurRadius={100}
                     />
 
                     {/* Flat dark overlay over every blurred backdrop so the
@@ -237,16 +237,6 @@ const Flow = () => {
                                 />
                             </View>
                         )}
-
-                        <View style={styles.badge}>
-                            <RemixIcon
-                                name="shuffle-line"
-                                size={13}
-                                color={Colors.textInverse}
-                                fallback={null}
-                            />
-                            <Text style={styles.badgeText}>Random Article</Text>
-                        </View>
 
                         <Text style={styles.title} numberOfLines={2}>
                             {item.title}
@@ -299,7 +289,7 @@ const Flow = () => {
                     style={styles.background}
                     contentFit="cover"
                     transition={200}
-                    blurRadius={40}
+                    blurRadius={100}
                 />
                 <View style={styles.overlay} />
                 <Loader />
@@ -335,7 +325,7 @@ const Flow = () => {
                             style={styles.background}
                             contentFit="cover"
                             transition={200}
-                            blurRadius={40}
+                            blurRadius={100}
                         />
                         <View style={styles.overlay} />
                         <Loader />
