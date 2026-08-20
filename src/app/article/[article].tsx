@@ -29,7 +29,7 @@ type ArticleMeta = {
 
 // Wikipedia thumbnails embed their width (e.g. ".../250px-Foo.jpg").
 // Bump it up so the full-screen image viewer shows a sharp version.
-const biggerImage = (src: string) => src.replace(/\/(\d+)px-/, "/1024px-");
+const biggerImage = (src: string) => src.replace(/\/(\d+)px-/, "/1280px-");
 
 const openImage = (src: string) => {
     router.push({
