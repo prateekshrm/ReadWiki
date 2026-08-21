@@ -344,31 +344,31 @@ const Home = () => {
                         <View style={styles.sectionContent}>
                             {onThisDayArticles.map(
                                 (item: any, index: number) => {
-                                    const article = item.pages?.[0];
-
                                     return (
                                         <OnThisDayEvent
                                             key={`${item.year}-${index}`}
                                             year={item.year}
                                             text={item.text}
-                                            title={article?.normalizedtitle}
-                                            image={article?.thumbnail?.source}
+                                            pages={item.pages}
                                             isFirst={index === 0}
                                             isLast={
                                                 index ===
                                                 onThisDayArticles.length - 1
                                             }
-                                            onPress={() =>
-                                                article &&
-                                                router.push({
-                                                    pathname:
-                                                        "/article/[article]",
-                                                    params: {
-                                                        article:
-                                                            article.normalizedtitle,
-                                                    },
-                                                })
-                                            }
+                                            onPressPage={(article) => {
+                                                const target =
+                                                    article?.normalizedtitle ||
+                                                    article?.title;
+                                                if (target) {
+                                                    router.push({
+                                                        pathname:
+                                                            "/article/[article]",
+                                                        params: {
+                                                            article: target,
+                                                        },
+                                                    });
+                                                }
+                                            }}
                                         />
                                     );
                                 },

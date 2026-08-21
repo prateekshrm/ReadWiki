@@ -8,7 +8,6 @@ import { getPreferences, setPreference } from "./preferences";
 import { getTomorrowFeaturedArticleTitle } from "./wikipedia";
 
 const FEATURED_NOTIFICATION_DATE_KEY = "featuredNotificationDate";
-const FEATURED_NOTIFICATION_MIGRATION_KEY = "featuredNotificationMigrationDone";
 const FEATURED_NOTIFICATION_ID = "featured-article";
 
 export const isExpoGo = (): boolean => {
@@ -97,49 +96,6 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     }
 };
 
-const performOneTimeMigration = async () => {
-    try {
-        const migrationDone = await AsyncStorage.getItem(
-            FEATURED_NOTIFICATION_MIGRATION_KEY,
-        );
-        if (migrationDone === "true") {
-            return;
-        }
-
-        const scheduled =
-            await Notifications.getAllScheduledNotificationsAsync();
-        for (const notification of scheduled) {
-            if (notification.content?.data?.type === "featured-article") {
-                if (notification.identifier) {
-                    await Notifications.cancelScheduledNotificationAsync(
-                        notification.identifier,
-                    );
-                }
-            }
-        }
-
-        try {
-            await Notifications.cancelScheduledNotificationAsync(
-                FEATURED_NOTIFICATION_ID,
-            );
-        } catch {
-            // Ignore error if notification identifier doesn't exist
-        }
-
-        await AsyncStorage.removeItem(FEATURED_NOTIFICATION_DATE_KEY);
-        await AsyncStorage.setItem(
-            FEATURED_NOTIFICATION_MIGRATION_KEY,
-            "true",
-        );
-        console.log("One-time notification migration completed.");
-    } catch (error) {
-        console.warn(
-            "Failed to perform notification migration cleanup:",
-            error,
-        );
-    }
-};
-
 export const scheduleTomorrowFeaturedNotification = async () => {
     if (isExpoGo() || Platform.OS === "web") {
         return;
@@ -150,8 +106,6 @@ export const scheduleTomorrowFeaturedNotification = async () => {
         if (status !== Notifications.PermissionStatus.GRANTED) {
             return;
         }
-
-        await performOneTimeMigration();
 
         const tomorrowDate = getTomorrow9AM();
         const tomorrowStr = getLocalYYYYMMDD(tomorrowDate);
