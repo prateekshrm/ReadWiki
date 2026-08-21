@@ -1,4 +1,11 @@
-import { getFeaturedDataCache, setFeaturedDataCache } from "./cache";
+import {
+    getArticleSummaryCache,
+    getFeaturedDataCache,
+    getFullArticleCache,
+    setArticleSummaryCache,
+    setFeaturedDataCache,
+    setFullArticleCache,
+} from "./cache";
 
 const BASE_URL = "https://api.wikimedia.org";
 
@@ -7,7 +14,6 @@ export const getFeaturedData = async () => {
         const cachedData = getFeaturedDataCache();
 
         if (cachedData) {
-            console.log("Using cached featured data");
             return cachedData;
         }
 
@@ -76,12 +82,18 @@ export const getTomorrowFeaturedArticleTitle = async () => {
 // far easier to render nicely than the lazy-loaded mobile-html format.
 export const getFullArticle = async (title: string) => {
     try {
+        const cachedData = getFullArticleCache(title);
+
+        if (cachedData) {
+            return cachedData;
+        }
+
         const encodedTitle = encodeURIComponent(title);
 
         const response = await fetch(
             `https://en.wikipedia.org/w/api.php?action=parse&page=${encodedTitle}` +
-                `&prop=text&format=json&formatversion=2&redirects=1` +
-                `&disableeditsection=1&disabletoc=1`,
+            `&prop=text&format=json&formatversion=2&redirects=1` +
+            `&disableeditsection=1&disabletoc=1`,
             {
                 headers: {
                     "User-Agent": "ReadWiki/1.0",
@@ -91,8 +103,13 @@ export const getFullArticle = async (title: string) => {
         );
 
         const data = await response.json();
+        const articleText = data?.parse?.text as string | undefined;
 
-        return data?.parse?.text as string | undefined;
+        if (articleText) {
+            setFullArticleCache(title, articleText);
+        }
+
+        return articleText;
     } catch (error) {
         console.log(error);
     }
@@ -102,6 +119,12 @@ export const getFullArticle = async (title: string) => {
 // lead image. Used for the article header and for saving articles.
 export const getArticleSummary = async (title: string) => {
     try {
+        const cachedData = getArticleSummaryCache(title);
+
+        if (cachedData) {
+            return cachedData;
+        }
+
         const encodedTitle = encodeURIComponent(title);
 
         const response = await fetch(
@@ -118,7 +141,11 @@ export const getArticleSummary = async (title: string) => {
             return null;
         }
 
-        return await response.json();
+        const data = await response.json();
+
+        setArticleSummaryCache(title, data);
+
+        return data;
     } catch (error) {
         console.log(error);
         return null;
