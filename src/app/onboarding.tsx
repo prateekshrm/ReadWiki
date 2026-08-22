@@ -64,9 +64,9 @@ const Onboarding = () => {
                     resizeMode="contain"
                 />
 
-                <Text style={styles.title}>
-                    <Text style={styles.titleRegular}>Read</Text>
-                    <Text style={styles.titleItalic}>Wiki</Text>
+                <Text style={styles.appName}>
+                    <Text style={styles.appNameRegular}>Read</Text>
+                    <Text style={styles.appNameItalic}>Wiki</Text>
                 </Text>
 
                 <Text style={styles.description}>
@@ -118,16 +118,16 @@ const styles = StyleSheet.create({
         height: 72,
         marginBottom: 4,
     },
-    title: {
+    appName: {
         fontSize: 32,
         color: Colors.textInverse,
         textAlign: "center",
         marginBottom: 24,
     },
-    titleRegular: {
+    appNameRegular: {
         fontFamily: "Fraunces-Medium",
     },
-    titleItalic: {
+    appNameItalic: {
         fontFamily: "Fraunces-MediumItalic",
     },
     description: {

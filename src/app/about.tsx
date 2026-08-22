@@ -37,7 +37,10 @@ export default function About() {
                     style={styles.icon}
                 />
 
-                <Text style={styles.appName}>ReadWiki</Text>
+                <Text style={styles.appName}>
+                    <Text style={styles.appNameRegular}>Read</Text>
+                    <Text style={styles.appNameItalic}>Wiki</Text>
+                </Text>
 
                 <Text style={styles.version}>
                     v{Application.nativeApplicationVersion}
@@ -202,8 +205,14 @@ const styles = StyleSheet.create({
     },
     appName: {
         fontSize: 28,
-        fontFamily: "DMSans-Bold",
         color: Colors.text,
+        textAlign: "center",
+    },
+    appNameRegular: {
+        fontFamily: "Fraunces-Medium",
+    },
+    appNameItalic: {
+        fontFamily: "Fraunces-MediumItalic",
     },
     version: {
         fontFamily: "DMSans-Medium",
