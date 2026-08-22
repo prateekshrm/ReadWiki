@@ -348,9 +348,9 @@ const Settings = () => {
                     </View>
 
                     <View style={styles.itemTextWrap}>
-                        <Text style={styles.title}>Getting started</Text>
+                        <Text style={styles.title}>Onboarding</Text>
                         <Text style={styles.subtitle}>
-                            Replay the welcome tour
+                            View the welcome screen again
                         </Text>
                     </View>
                 </View>

@@ -20,6 +20,7 @@ import { DMSans_600SemiBold } from "@expo-google-fonts/dm-sans/600SemiBold";
 import { DMSans_700Bold } from "@expo-google-fonts/dm-sans/700Bold";
 
 import { Fraunces_500Medium } from "@expo-google-fonts/fraunces/500Medium";
+import { Fraunces_500Medium_Italic } from "@expo-google-fonts/fraunces/500Medium_Italic";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -35,6 +36,7 @@ export default function RootLayout() {
         "DMSans-SemiBold": DMSans_600SemiBold,
         "DMSans-Bold": DMSans_700Bold,
         "Fraunces-Medium": Fraunces_500Medium,
+        "Fraunces-MediumItalic": Fraunces_500Medium_Italic,
     });
 
     useEffect(() => {
@@ -88,10 +90,7 @@ export default function RootLayout() {
                 }}
             >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                    name="onboarding"
-                    options={{ headerShown: false }}
-                />
+                <Stack.Screen name="onboarding" options={{ title: "" }} />
                 <Stack.Screen
                     name="article/[article]"
                     options={{ title: "" }}
@@ -106,14 +105,8 @@ export default function RootLayout() {
                     name="on-this-day"
                     options={{ title: "On This Day" }}
                 />
-                <Stack.Screen
-                    name="history"
-                    options={{ title: "History" }}
-                />
-                <Stack.Screen
-                    name="saved"
-                    options={{ title: "Saved" }}
-                />
+                <Stack.Screen name="history" options={{ title: "History" }} />
+                <Stack.Screen name="saved" options={{ title: "Saved" }} />
                 <Stack.Screen name="about" options={{ title: "About" }} />
             </Stack>
         </HeaderScrollProvider>
