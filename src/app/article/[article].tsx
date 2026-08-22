@@ -116,6 +116,15 @@ const Article = () => {
     const isConnected = useNetworkStatus();
     const prevConnectedRef = useRef<boolean | null>(null);
 
+    useEffect(() => {
+        const currentMeta = meta ?? (article ? { title: article } : null);
+        if (currentMeta) {
+            navigation.setOptions({
+                headerRight: () => <HeaderRight meta={currentMeta} />,
+            });
+        }
+    }, [navigation, meta, article]);
+
     const loadArticle = useCallback(async () => {
         if (!article) return;
         try {
