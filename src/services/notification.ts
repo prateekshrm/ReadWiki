@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Notifications from "expo-notifications";
 import { Href, router } from "expo-router";
 import { Platform } from "react-native";
@@ -10,26 +9,17 @@ import { getTomorrowFeaturedArticleTitle } from "./wikipedia";
 const FEATURED_NOTIFICATION_DATE_KEY = "featuredNotificationDate";
 const FEATURED_NOTIFICATION_ID = "featured-article";
 
-export const isExpoGo = (): boolean => {
-    return (
-        Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
-        (Constants as any).appOwnership === "expo"
-    );
-};
-
-if (!isExpoGo() && Platform.OS !== "web") {
-    try {
-        Notifications.setNotificationHandler({
-            handleNotification: async () => ({
-                shouldShowBanner: true,
-                shouldShowList: true,
-                shouldPlaySound: true,
-                shouldSetBadge: false,
-            }),
-        });
-    } catch (error) {
-        console.warn("Failed to set notification handler:", error);
-    }
+try {
+    Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+            shouldShowBanner: true,
+            shouldShowList: true,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+        }),
+    });
+} catch (error) {
+    console.warn("Failed to set notification handler:", error);
 }
 
 export const getLocalYYYYMMDD = (date: Date = new Date()): string => {
@@ -49,10 +39,6 @@ export const getTomorrow9AM = (): Date => {
 export const getNotificationPermissionStatus = async (): Promise<
     Notifications.PermissionStatus | "unsupported"
 > => {
-    if (isExpoGo() || Platform.OS === "web") {
-        return "unsupported";
-    }
-
     try {
         const { status } = await Notifications.getPermissionsAsync();
         return status;
@@ -63,10 +49,6 @@ export const getNotificationPermissionStatus = async (): Promise<
 };
 
 export const requestNotificationPermission = async (): Promise<boolean> => {
-    if (isExpoGo() || Platform.OS === "web") {
-        return false;
-    }
-
     try {
         if (Platform.OS === "android") {
             await Notifications.setNotificationChannelAsync("default", {
@@ -97,10 +79,6 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 };
 
 export const scheduleTomorrowFeaturedNotification = async () => {
-    if (isExpoGo() || Platform.OS === "web") {
-        return;
-    }
-
     try {
         const status = await getNotificationPermissionStatus();
         if (status !== Notifications.PermissionStatus.GRANTED) {
@@ -172,16 +150,23 @@ export const scheduleTomorrowFeaturedNotification = async () => {
     }
 };
 
+let isInitializing = false;
+
 export const initializeNotifications = async () => {
-    if (isExpoGo() || Platform.OS === "web") {
+    if (isInitializing) {
         return;
     }
+    isInitializing = true;
 
     try {
         const prefs = getPreferences();
 
+        if (!prefs.onboarded) {
+            return;
+        }
+
         if (prefs.notificationPermission === null) {
-            // First time opening app: ask for permission
+            // First time opening app (after onboarding): ask for permission
             const hasPermission = await requestNotificationPermission();
             setPreference(
                 "notificationPermission",
@@ -207,6 +192,8 @@ export const initializeNotifications = async () => {
         }
     } catch (error) {
         console.warn("Failed to initialize notifications:", error);
+    } finally {
+        isInitializing = false;
     }
 };
 
@@ -259,7 +246,6 @@ export const handleNotificationResponse = (
 };
 
 export const registerNotificationResponseListener = () => {
-    if (isExpoGo() || Platform.OS === "web") return;
     if (isListenerRegistered) return;
     isListenerRegistered = true;
 
@@ -284,13 +270,6 @@ export const sendTestNotification = async (): Promise<{
     success: boolean;
     message: string;
 }> => {
-    if (isExpoGo() || Platform.OS === "web") {
-        return {
-            success: false,
-            message: "Notifications are not supported in Expo Go or Web.",
-        };
-    }
-
     try {
         const status = await getNotificationPermissionStatus();
         const isGranted = status === Notifications.PermissionStatus.GRANTED;
@@ -334,7 +313,6 @@ export const sendTestNotification = async (): Promise<{
 };
 
 export const cancelAllNotifications = async () => {
-    if (isExpoGo() || Platform.OS === "web") return;
     try {
         await Notifications.cancelAllScheduledNotificationsAsync();
         await AsyncStorage.removeItem(FEATURED_NOTIFICATION_DATE_KEY);
@@ -342,4 +320,3 @@ export const cancelAllNotifications = async () => {
         console.warn("Failed to cancel notifications:", error);
     }
 };
-

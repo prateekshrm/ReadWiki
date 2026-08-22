@@ -2,7 +2,6 @@ import { useScreenScroll } from "@/components/HeaderScroll";
 import Colors from "@/constants/Colors";
 import {
     getNotificationPermissionStatus,
-    isExpoGo,
     scheduleTomorrowFeaturedNotification,
     sendTestNotification,
 } from "@/services/notification";
@@ -72,7 +71,7 @@ const Settings = () => {
     }, []);
 
     const handleOpenNotificationSettings = () => {
-        if (isExpoGo() || permissionStatus === "unsupported") {
+        if (permissionStatus === "unsupported") {
             return;
         }
         void Linking.openSettings();
@@ -131,7 +130,7 @@ const Settings = () => {
 
     const getPermissionSubtitle = () => {
         if (permissionStatus === "unsupported") {
-            return "Not supported in Expo Go or Web";
+            return "Not supported on this device";
         }
         if (permissionStatus === "granted") {
             return "Notifications enabled. Tap to manage in settings";
@@ -300,7 +299,7 @@ const Settings = () => {
                         <Text style={styles.title}>Send Test Notification</Text>
                         <Text style={styles.subtitle}>
                             {permissionStatus === "unsupported"
-                                ? "Not supported in Expo Go"
+                                ? "Not supported on this device"
                                 : "Trigger a test notification in 2 seconds"}
                         </Text>
                     </View>

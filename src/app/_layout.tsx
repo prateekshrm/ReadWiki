@@ -3,7 +3,6 @@ import { HeaderScrollProvider } from "@/components/HeaderScroll";
 import useNetworkAlert from "@/hooks/useNetworkAlert";
 import {
     initializeNotifications,
-    isExpoGo,
     registerNotificationResponseListener,
     setRouterReady,
 } from "@/services/notification";
@@ -53,11 +52,11 @@ export default function RootLayout() {
     }, [loaded, error]);
 
     useEffect(() => {
-        if (!isExpoGo() && Platform.OS !== "web") {
-            registerNotificationResponseListener();
+        registerNotificationResponseListener();
+        if (preferences.onboarded) {
             void initializeNotifications();
         }
-    }, []);
+    }, [preferences.onboarded]);
 
     useEffect(() => {
         if (loaded && isNavigationReady) {
