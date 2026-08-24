@@ -306,7 +306,6 @@ const Article = () => {
                     // there is a hero image.
                     !meta?.heroImage && { paddingTop: insets.top + 52 },
                 ]}
-                showsVerticalScrollIndicator={false}
                 onScroll={onScroll}
                 scrollEventThrottle={16}
                 renderItem={({ item }) => renderBlock(item as Block)}

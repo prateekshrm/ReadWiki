@@ -17,11 +17,7 @@ export default (): ExpoConfig => {
         version: "1.0.0",
         orientation: "portrait",
 
-        icon: isDevelopment
-            ? "./assets/images/icon-dev.png"
-            : isPreview
-              ? "./assets/images/icon-preview.png"
-              : "./assets/images/icon.png",
+        icon: "./assets/images/icon.png",
 
         scheme: "readwiki",
         userInterfaceStyle: "automatic",
@@ -33,11 +29,7 @@ export default (): ExpoConfig => {
         android: {
             adaptiveIcon: {
                 backgroundColor: "#191919",
-                foregroundImage: isDevelopment
-                    ? "./assets/images/android-icon-foreground-dev.png"
-                    : isPreview
-                      ? "./assets/images/android-icon-foreground-preview.png"
-                      : "./assets/images/android-icon-foreground.png",
+                foregroundImage: "./assets/images/android-icon-foreground.png",
                 backgroundImage: "./assets/images/android-icon-background.png",
                 monochromeImage: "./assets/images/android-icon-monochrome.png",
             },
