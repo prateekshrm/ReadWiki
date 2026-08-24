@@ -2,6 +2,7 @@ import { useScreenScroll } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
 import NoInternetView from "@/components/NoInternetView";
 import RichText from "@/components/RichText";
+import TableView from "@/components/TableView";
 import Colors from "@/constants/Colors";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
 import { addToHistory } from "@/services/articleHistory";
@@ -284,6 +285,9 @@ const Article = () => {
                     </View>
                 );
             }
+
+            case "table":
+                return <TableView block={block} fontScale={fontScale} />;
 
             default:
                 return null;

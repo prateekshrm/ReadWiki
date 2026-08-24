@@ -13,6 +13,37 @@ export type Span = {
     link?: string;
 };
 
+export type TableCell = {
+    spans: Span[];
+    isHeader: boolean;
+    rowspan: number;
+    colspan: number;
+    align?: "left" | "center" | "right";
+};
+
+export type LogicalRowSubCell = {
+    cell: TableCell;
+    subRowSpan: number;
+};
+
+export type LogicalRowColumn = {
+    subCells: LogicalRowSubCell[];
+    colspan: number;
+};
+
+export type LogicalRowBlock = {
+    numSubRows: number;
+    columns: LogicalRowColumn[];
+};
+
+export type TableBlock = {
+    type: "table";
+    caption?: string;
+    numCols: number;
+    numRows: number;
+    blocks: LogicalRowBlock[];
+};
+
 // The building blocks the article screen knows how to render.
 export type Block =
     | { type: "heading"; level: number; text: string }
@@ -24,7 +55,9 @@ export type Block =
           caption?: string;
           width?: number;
           height?: number;
-      };
+      }
+    | TableBlock;
+
 
 // ---------------------------------------------------------------------------
 // What to ignore
@@ -264,6 +297,237 @@ const parseList = (node: any, ordered: boolean): Block | null => {
     return { type: "list", ordered, items };
 };
 
+// Pulls a table block out of a <table> element.
+type GridCellEntry = {
+    cell: TableCell;
+    originRow: number;
+    originCol: number;
+};
+
+const parseTable = (node: any): TableBlock | null => {
+    let caption = "";
+    const findCaption = (container: any) => {
+        if (caption || !container || !Array.isArray(container.children)) return;
+        for (const child of container.children) {
+            if (child.type === "tag" && child.name === "caption" && !shouldSkip(child)) {
+                caption = getText(child).replace(/\s+/g, " ").trim();
+                return;
+            }
+        }
+    };
+    findCaption(node);
+
+    const trs: any[] = [];
+    const findTRs = (container: any) => {
+        if (!container || !Array.isArray(container.children)) return;
+        for (const child of container.children) {
+            if (child.type !== "tag" || shouldSkip(child)) continue;
+            if (child.name === "tr") {
+                trs.push(child);
+            } else if (["thead", "tbody", "tfoot"].includes(child.name)) {
+                findTRs(child);
+            }
+        }
+    };
+    findTRs(node);
+
+    if (!trs.length) return null;
+
+    const grid: (GridCellEntry | null)[][] = [];
+    let numCols = 0;
+    let rIndex = 0;
+
+    for (const tr of trs) {
+        if (!grid[rIndex]) grid[rIndex] = [];
+        let cIndex = 0;
+
+        for (const child of tr.children ?? []) {
+            if (child.type !== "tag" || shouldSkip(child)) continue;
+            if (child.name !== "th" && child.name !== "td") continue;
+
+            while (grid[rIndex][cIndex]) {
+                cIndex++;
+            }
+
+            const isHeader = child.name === "th";
+            const rawRowspan = parseInt(child.attribs?.rowspan, 10);
+            const rowspan = !isNaN(rawRowspan) && rawRowspan > 0 ? rawRowspan : 1;
+            const rawColspan = parseInt(child.attribs?.colspan, 10);
+            const colspan = !isNaN(rawColspan) && rawColspan > 0 ? rawColspan : 1;
+
+            const alignAttr = child.attribs?.align;
+            const styleAlign = child.attribs?.style?.match(/text-align:\s*(\w+)/)?.[1];
+            let align: "left" | "center" | "right" | undefined;
+            const rawAlign = (alignAttr || styleAlign || "").toLowerCase();
+            if (rawAlign === "left" || rawAlign === "center" || rawAlign === "right") {
+                align = rawAlign;
+            }
+
+            const spans = getSpans(child);
+
+            const tableCell: TableCell = {
+                spans,
+                isHeader,
+                rowspan,
+                colspan,
+                align,
+            };
+
+            const entry: GridCellEntry = {
+                cell: tableCell,
+                originRow: rIndex,
+                originCol: cIndex,
+            };
+
+            for (let dr = 0; dr < rowspan; dr++) {
+                const targetR = rIndex + dr;
+                if (!grid[targetR]) grid[targetR] = [];
+                for (let dc = 0; dc < colspan; dc++) {
+                    grid[targetR][cIndex + dc] = entry;
+                }
+            }
+
+            cIndex += colspan;
+            if (cIndex > numCols) numCols = cIndex;
+        }
+
+        rIndex++;
+    }
+
+    const numRows = grid.length;
+    if (numRows === 0 || numCols === 0) return null;
+
+    for (let r = 0; r < numRows; r++) {
+        if (!grid[r]) grid[r] = [];
+        for (let c = 0; c < numCols; c++) {
+            if (!grid[r][c]) {
+                grid[r][c] = {
+                    cell: { spans: [], isHeader: false, rowspan: 1, colspan: 1 },
+                    originRow: r,
+                    originCol: c,
+                };
+            }
+        }
+    }
+
+    const blocks: LogicalRowBlock[] = [];
+    let blockStart = 0;
+
+    while (blockStart < numRows) {
+        let blockEnd = blockStart;
+        let r = blockStart;
+
+        while (r <= blockEnd && r < numRows) {
+            for (let c = 0; c < numCols; c++) {
+                const entry = grid[r][c];
+                if (entry) {
+                    const maxR = entry.originRow + entry.cell.rowspan - 1;
+                    if (maxR > blockEnd) {
+                        blockEnd = maxR;
+                    }
+                }
+            }
+            r++;
+        }
+
+        if (blockEnd >= numRows) blockEnd = numRows - 1;
+        const numSubRows = blockEnd - blockStart + 1;
+
+        const columns: LogicalRowColumn[] = [];
+        let c = 0;
+
+        while (c < numCols) {
+            const entry = grid[blockStart][c];
+            if (!entry) {
+                c++;
+                continue;
+            }
+
+            if (entry.originCol < c) {
+                c++;
+                continue;
+            }
+
+            const colspan = entry.cell.colspan;
+            const subCells: LogicalRowSubCell[] = [];
+            let subR = blockStart;
+
+            while (subR <= blockEnd) {
+                const subEntry = grid[subR][c];
+                if (subEntry && subEntry.originRow === subR) {
+                    const subRowSpan = Math.min(subEntry.cell.rowspan, blockEnd - subR + 1);
+                    subCells.push({
+                        cell: subEntry.cell,
+                        subRowSpan,
+                    });
+                    subR += subRowSpan;
+                } else if (subEntry && subEntry.originRow < blockStart && subR === blockStart) {
+                    const subRowSpan = Math.min(
+                        subEntry.cell.rowspan - (blockStart - subEntry.originRow),
+                        numSubRows,
+                    );
+                    subCells.push({
+                        cell: subEntry.cell,
+                        subRowSpan,
+                    });
+                    subR += subRowSpan;
+                } else {
+                    let emptySpan = 0;
+                    while (subR + emptySpan <= blockEnd) {
+                        const checkEntry = grid[subR + emptySpan][c];
+                        if (
+                            checkEntry &&
+                            (checkEntry.originRow === subR + emptySpan ||
+                                (checkEntry.originRow < blockStart &&
+                                    subR + emptySpan === blockStart))
+                        ) {
+                            break;
+                        }
+                        emptySpan++;
+                    }
+
+                    if (emptySpan > 0) {
+                        subCells.push({
+                            cell: {
+                                spans: [],
+                                isHeader: false,
+                                rowspan: emptySpan,
+                                colspan: 1,
+                            },
+                            subRowSpan: emptySpan,
+                        });
+                        subR += emptySpan;
+                    } else {
+                        subR++;
+                    }
+                }
+            }
+
+            columns.push({
+                subCells,
+                colspan,
+            });
+
+            c += colspan;
+        }
+
+        blocks.push({
+            numSubRows,
+            columns,
+        });
+
+        blockStart = blockEnd + 1;
+    }
+
+    return {
+        type: "table",
+        caption: caption || undefined,
+        numCols,
+        numRows,
+        blocks,
+    };
+};
+
 // ---------------------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------------------
@@ -281,9 +545,14 @@ export const parseArticle = (html: string): Block[] => {
             case "style":
             case "link":
             case "sup":
-            case "table": // info boxes / data tables are skipped for now
             case "img": // stray inline icons; real images come from <figure>
                 return;
+
+            case "table": {
+                const block = parseTable(node);
+                if (block) blocks.push(block);
+                return;
+            }
 
             case "h2":
             case "h3":
