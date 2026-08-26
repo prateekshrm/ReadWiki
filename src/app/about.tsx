@@ -43,7 +43,7 @@ export default function About() {
                 </Text>
 
                 <Text style={styles.version}>
-                    v{Application.nativeApplicationVersion}
+                    Version: {Application.nativeApplicationVersion}
                 </Text>
 
                 <Pressable
@@ -96,7 +96,7 @@ export default function About() {
                             color={Colors.accent}
                         />
 
-                        <Text style={styles.authorLinkText}>@pratksharma</Text>
+                        <Text style={styles.authorLinkText}>@prateekshrm</Text>
                     </Pressable>
                 </View>
             </View>
@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
         fontSize: 28,
         color: Colors.text,
         textAlign: "center",
+        marginBottom: 4,
     },
     appNameRegular: {
         fontFamily: "Fraunces-Medium",

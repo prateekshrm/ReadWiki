@@ -68,9 +68,7 @@ export default function RootLayout() {
                     tabBarIcon: ({ focused, color }) => (
                         <RemixIcon
                             name={
-                                focused
-                                    ? "book-shelf-fill"
-                                    : "book-shelf-line"
+                                focused ? "book-shelf-fill" : "book-shelf-line"
                             }
                             size={TAB_ICON_SIZE}
                             color={color as string}
