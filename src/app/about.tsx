@@ -10,8 +10,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const AUTHOR_NAME = "Prateek Sharma";
 const AUTHOR_PORTFOLIO = "https://pratk.in";
-const AUTHOR_GITHUB = "https://github.com/pratksharma";
-const REPOSITORY_URL = "https://github.com/pratksharma/ReadWiki";
+const AUTHOR_GITHUB = "https://github.com/prateekshrm";
+const REPOSITORY_URL = "https://github.com/prateekshrm/ReadWiki";
 const AUTHOR_BIO = "Sofware Developer";
 
 export default function About() {
