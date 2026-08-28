@@ -24,7 +24,6 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import RemixIcon from "react-native-remix-icon";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { height } = Dimensions.get("screen");
 
@@ -119,8 +118,6 @@ const Flow = () => {
     const [articles, setArticles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-
-    const insets = useSafeAreaInsets();
 
     // Flow is a full-screen dark pager, so keep the header in its white state.
     useSolidHeader();
@@ -219,14 +216,7 @@ const Flow = () => {
                         style={styles.bottomScrim}
                     />
 
-                    <View
-                        style={[
-                            styles.content,
-                            {
-                                paddingBottom: insets.bottom + 100,
-                            },
-                        ]}
-                    >
+                    <View style={styles.content}>
                         {thumbnail && (
                             <View style={styles.imageCard}>
                                 <Image
@@ -349,7 +339,7 @@ const styles = StyleSheet.create({
     page: {
         flex: 1,
         height,
-        justifyContent: "flex-end",
+        justifyContent: "center",
     },
 
     background: {
