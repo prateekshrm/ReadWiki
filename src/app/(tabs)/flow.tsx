@@ -1,12 +1,14 @@
+import NoInternetView from "@/components/NoInternetView";
 import { useSolidHeader } from "@/components/HeaderScroll";
 import Loader from "@/components/Loader";
 import Colors from "@/constants/Colors";
+import useNetworkStatus from "@/hooks/useNetworkStatus";
 import { toggleSavedArticle, useIsSaved } from "@/services/savedArticles";
 import { getRandomArticles } from "@/services/wikipedia";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Dimensions,
     FlatList,
@@ -119,6 +121,9 @@ const Flow = () => {
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
 
+    const isConnected = useNetworkStatus();
+    const prevConnectedRef = useRef<boolean | null>(null);
+
     // Flow is a full-screen dark pager, so keep the header in its white state.
     useSolidHeader();
 
@@ -132,15 +137,19 @@ const Flow = () => {
         }
     };
 
-    const loadInitial = async () => {
+    const loadInitial = useCallback(async () => {
         try {
             const data = await getRandomArticles(BATCH_SIZE);
-            await preloadImages(data);
-            setArticles(data);
+            if (data && data.length > 0) {
+                await preloadImages(data);
+                setArticles(data);
+            }
+        } catch (error) {
+            console.error("Failed to load flow articles:", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     const loadMore = async () => {
         if (loadingMore) return;
@@ -149,8 +158,12 @@ const Flow = () => {
 
         try {
             const more = await getRandomArticles(BATCH_SIZE);
-            await preloadImages(more);
-            setArticles((prev) => [...prev, ...more]);
+            if (more && more.length > 0) {
+                await preloadImages(more);
+                setArticles((prev) => [...prev, ...more]);
+            }
+        } catch (error) {
+            console.error("Failed to load more flow articles:", error);
         } finally {
             setLoadingMore(false);
         }
@@ -158,7 +171,16 @@ const Flow = () => {
 
     useEffect(() => {
         loadInitial();
-    }, []);
+    }, [loadInitial]);
+
+    // Refetch when internet arrives
+    useEffect(() => {
+        if (prevConnectedRef.current === false && isConnected === true) {
+            setLoading(true);
+            loadInitial();
+        }
+        prevConnectedRef.current = isConnected;
+    }, [isConnected, loadInitial]);
 
     const openArticle = useCallback((title: string) => {
         router.push({
@@ -287,6 +309,19 @@ const Flow = () => {
         );
     }
 
+    if (!articles || articles.length === 0) {
+        return (
+            <View style={styles.container}>
+                <NoInternetView
+                    onRetry={() => {
+                        setLoading(true);
+                        loadInitial();
+                    }}
+                />
+            </View>
+        );
+    }
+
     return (
         <FlatList
             data={articles}
@@ -329,6 +364,11 @@ const Flow = () => {
 export default Flow;
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: Colors.background,
+    },
+
     loading: {
         flex: 1,
         height,
