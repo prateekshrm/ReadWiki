@@ -1,4 +1,5 @@
 const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
+const MAX_ARTICLES_CACHE = 5;
 
 let featuredDataCache: any = null;
 let featuredDataCacheTime = 0;
@@ -47,15 +48,32 @@ export const getFullArticleCache = (title: string) => {
         return null;
     }
 
+    fullArticleCache.delete(key);
+    fullArticleCache.set(key, item);
+
     return item.data;
 };
 
 export const setFullArticleCache = (title: string, data: any) => {
     const key = title.trim().toLowerCase();
+
+    if (fullArticleCache.has(key)) {
+        fullArticleCache.delete(key);
+    }
+
     fullArticleCache.set(key, {
         data,
         timestamp: Date.now(),
     });
+
+    while (fullArticleCache.size > MAX_ARTICLES_CACHE) {
+        const oldestKey = fullArticleCache.keys().next().value;
+        if (oldestKey !== undefined) {
+            fullArticleCache.delete(oldestKey);
+        } else {
+            break;
+        }
+    }
 };
 
 export const clearFullArticleCache = (title?: string) => {
@@ -81,15 +99,32 @@ export const getArticleSummaryCache = (title: string) => {
         return null;
     }
 
+    articleSummaryCache.delete(key);
+    articleSummaryCache.set(key, item);
+
     return item.data;
 };
 
 export const setArticleSummaryCache = (title: string, data: any) => {
     const key = title.trim().toLowerCase();
+
+    if (articleSummaryCache.has(key)) {
+        articleSummaryCache.delete(key);
+    }
+
     articleSummaryCache.set(key, {
         data,
         timestamp: Date.now(),
     });
+
+    while (articleSummaryCache.size > MAX_ARTICLES_CACHE) {
+        const oldestKey = articleSummaryCache.keys().next().value;
+        if (oldestKey !== undefined) {
+            articleSummaryCache.delete(oldestKey);
+        } else {
+            break;
+        }
+    }
 };
 
 export const clearArticleSummaryCache = (title?: string) => {
