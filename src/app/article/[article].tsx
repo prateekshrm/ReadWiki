@@ -12,8 +12,8 @@ import { toggleSavedArticle, useIsSaved } from "@/services/savedArticles";
 import { getArticleSummary, getFullArticle } from "@/services/wikipedia";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { Platform, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import RemixIcon from "react-native-remix-icon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,6 +60,7 @@ const shareArticle = async (item: any) => {
         // User dismissed the share sheet; nothing to do.
     }
 };
+
 const HeaderRight = ({ meta }: { meta: ArticleMeta }) => {
     const saved = useIsSaved(meta.title);
 
@@ -103,6 +104,100 @@ const HeaderRight = ({ meta }: { meta: ArticleMeta }) => {
     );
 };
 
+type ArticleBlockItemProps = {
+    block: Block;
+    fontScale: number;
+};
+
+const ArticleBlockItem = memo(({ block, fontScale }: ArticleBlockItemProps) => {
+    switch (block.type) {
+        case "heading":
+            return (
+                <Text
+                    style={[
+                        block.level === 2
+                            ? styles.heading2
+                            : styles.heading3,
+                        {
+                            fontSize:
+                                (block.level === 2 ? 32 : 28) * fontScale,
+                        },
+                    ]}
+                >
+                    {block.text}
+                </Text>
+            );
+
+        case "paragraph":
+            return (
+                <RichText
+                    spans={block.spans}
+                    style={[
+                        styles.paragraph,
+                        {
+                            fontSize: 17 * fontScale,
+                            lineHeight: 28 * fontScale,
+                        },
+                    ]}
+                />
+            );
+
+        case "list":
+            return (
+                <View style={styles.list}>
+                    {block.items.map((item, index) => (
+                        <View key={index} style={styles.listItem}>
+                            <Text style={styles.bullet}>
+                                {block.ordered ? `${index + 1}.` : "•"}
+                            </Text>
+                            <RichText
+                                spans={item}
+                                style={[
+                                    styles.paragraph,
+                                    {
+                                        flex: 1,
+                                        marginBottom: 0,
+                                        fontSize: 17 * fontScale,
+                                        lineHeight: 28 * fontScale,
+                                    },
+                                ]}
+                            />
+                        </View>
+                    ))}
+                </View>
+            );
+
+        case "image": {
+            const ratio =
+                block.width && block.height
+                    ? block.width / block.height
+                    : 3 / 2;
+
+            return (
+                <View style={styles.figure}>
+                    <Pressable onPress={() => openImage(block.src)}>
+                        <Image
+                            source={block.src}
+                            style={[styles.image, { aspectRatio: ratio }]}
+                            contentFit="cover"
+                            transition={200}
+                        />
+                    </Pressable>
+                    {!!block.caption && (
+                        <Text style={styles.caption}>{block.caption}</Text>
+                    )}
+                </View>
+            );
+        }
+
+        case "table":
+            return <TableView block={block} fontScale={fontScale} />;
+
+        default:
+            return null;
+    }
+});
+
 const Article = () => {
     const { article } = useLocalSearchParams<{ article: string }>();
     const navigation = useNavigation();
@@ -116,6 +211,20 @@ const Article = () => {
 
     const isConnected = useNetworkStatus();
     const prevConnectedRef = useRef<boolean | null>(null);
+
+    const fontScale = preferences.fontScale;
+
+    const renderItem = useCallback(
+        ({ item }: { item: Block }) => (
+            <ArticleBlockItem block={item} fontScale={fontScale} />
+        ),
+        [fontScale],
+    );
+
+    const keyExtractor = useCallback(
+        (item: Block, index: number) => `${item.type}-${index}`,
+        [],
+    );
 
     useEffect(() => {
         const currentMeta = meta ?? (article ? { title: article } : null);
@@ -207,102 +316,11 @@ const Article = () => {
         );
     }
 
-    const fontScale = preferences.fontScale;
-
-    const renderBlock = (block: Block) => {
-        switch (block.type) {
-            case "heading":
-                return (
-                    <Text
-                        style={[
-                            block.level === 2
-                                ? styles.heading2
-                                : styles.heading3,
-                            {
-                                fontSize:
-                                    (block.level === 2 ? 32 : 28) * fontScale,
-                            },
-                        ]}
-                    >
-                        {block.text}
-                    </Text>
-                );
-
-            case "paragraph":
-                return (
-                    <RichText
-                        spans={block.spans}
-                        style={[
-                            styles.paragraph,
-                            {
-                                fontSize: 17 * fontScale,
-                                lineHeight: 28 * fontScale,
-                            },
-                        ]}
-                    />
-                );
-
-            case "list":
-                return (
-                    <View style={styles.list}>
-                        {block.items.map((item, index) => (
-                            <View key={index} style={styles.listItem}>
-                                <Text style={styles.bullet}>
-                                    {block.ordered ? `${index + 1}.` : "•"}
-                                </Text>
-                                <RichText
-                                    spans={item}
-                                    style={[
-                                        styles.paragraph,
-                                        {
-                                            flex: 1,
-                                            marginBottom: 0,
-                                            fontSize: 17 * fontScale,
-                                            lineHeight: 28 * fontScale,
-                                        },
-                                    ]}
-                                />
-                            </View>
-                        ))}
-                    </View>
-                );
-
-            case "image": {
-                const ratio =
-                    block.width && block.height
-                        ? block.width / block.height
-                        : 3 / 2;
-
-                return (
-                    <View style={styles.figure}>
-                        <Pressable onPress={() => openImage(block.src)}>
-                            <Image
-                                source={block.src}
-                                style={[styles.image, { aspectRatio: ratio }]}
-                                contentFit="cover"
-                                transition={200}
-                            />
-                        </Pressable>
-                        {!!block.caption && (
-                            <Text style={styles.caption}>{block.caption}</Text>
-                        )}
-                    </View>
-                );
-            }
-
-            case "table":
-                return <TableView block={block} fontScale={fontScale} />;
-
-            default:
-                return null;
-        }
-    };
-
     return (
         <View style={styles.container}>
             <Animated.FlatList
                 data={blocks}
-                keyExtractor={(_, index) => index.toString()}
+                keyExtractor={keyExtractor}
                 contentContainerStyle={[
                     styles.content,
                     // With no hero image the title would sit under the transparent
@@ -312,7 +330,12 @@ const Article = () => {
                 ]}
                 onScroll={onScroll}
                 scrollEventThrottle={16}
-                renderItem={({ item }) => renderBlock(item as Block)}
+                renderItem={renderItem}
+                removeClippedSubviews={Platform.OS === "android"}
+                maxToRenderPerBatch={10}
+                windowSize={7}
+                initialNumToRender={8}
+                updateCellsBatchingPeriod={50}
                 ListHeaderComponent={
                     meta ? (
                         <View style={styles.header}>

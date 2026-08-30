@@ -1,7 +1,7 @@
 import RichText from "@/components/RichText";
 import Colors from "@/constants/Colors";
 import type { TableBlock } from "@/services/articleParser";
-import React, { useCallback, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 type TableViewProps = {
@@ -9,26 +9,31 @@ type TableViewProps = {
     fontScale?: number;
 };
 
-// Computes initial column widths based on maximum text length in non-colspan cells
+const MIN_COL_WIDTH = 60;
+const MAX_COL_WIDTH = 280;
+
+// Computes initial column widths based on maximum text length in non-colspan cells,
+// capping horizontal width at MAX_COL_WIDTH (280px) to prevent excessive width.
 const computeInitialWidths = (
     block: TableBlock,
     fontScale: number,
 ): number[] => {
-    const widths: number[] = new Array(block.numCols).fill(60);
+    const widths: number[] = new Array(block.numCols).fill(MIN_COL_WIDTH);
 
     for (const logicalRow of block.blocks) {
         let colIdx = 0;
         for (const col of logicalRow.columns) {
             if (col.colspan === 1) {
                 for (const subCell of col.subCells) {
-                    const text = subCell.cell.spans
-                        .map((s) => s.text)
-                        .join("");
-                    // Rough estimate of text width based on char count
+                    const text = subCell.cell.spans.map((s) => s.text).join("");
+                    // Estimate text width based on char count
                     const charCount = text.length;
                     const estimatedWidth = Math.max(
-                        60,
-                        Math.min(320, Math.ceil(charCount * 8.5 * fontScale + 24)),
+                        MIN_COL_WIDTH,
+                        Math.min(
+                            MAX_COL_WIDTH,
+                            Math.ceil(charCount * 8 * fontScale + 24),
+                        ),
                     );
                     if (estimatedWidth > widths[colIdx]) {
                         widths[colIdx] = estimatedWidth;
@@ -43,24 +48,10 @@ const computeInitialWidths = (
 };
 
 const TableView = ({ block, fontScale = 1 }: TableViewProps) => {
-    const initialWidths = useMemo(
+    const columnWidths = useMemo(
         () => computeInitialWidths(block, fontScale),
         [block, fontScale],
     );
-
-    const [columnWidths, setColumnWidths] = useState<number[]>(initialWidths);
-
-    const handleCellLayout = useCallback((colIndex: number, measuredWidth: number) => {
-        const ceilWidth = Math.ceil(measuredWidth + 24); // add cell padding
-        setColumnWidths((prev) => {
-            if (ceilWidth > (prev[colIndex] || 0)) {
-                const next = [...prev];
-                next[colIndex] = ceilWidth;
-                return next;
-            }
-            return prev;
-        });
-    }, []);
 
     return (
         <View style={styles.outerContainer}>
@@ -91,7 +82,8 @@ const TableView = ({ block, fontScale = 1 }: TableViewProps) => {
 
                                     let colWidth = 0;
                                     for (let k = 0; k < col.colspan; k++) {
-                                        colWidth += columnWidths[startCol + k] || 60;
+                                        colWidth +=
+                                            columnWidths[startCol + k] || MIN_COL_WIDTH;
                                     }
 
                                     const isLastColumn =
@@ -111,7 +103,7 @@ const TableView = ({ block, fontScale = 1 }: TableViewProps) => {
                                                 key={colIndex}
                                                 style={[
                                                     styles.cell,
-                                                    { width: colWidth },
+                                                    { width: colWidth, maxWidth: colWidth },
                                                     cell.isHeader
                                                         ? styles.headerCell
                                                         : styles.dataCell,
@@ -119,19 +111,7 @@ const TableView = ({ block, fontScale = 1 }: TableViewProps) => {
                                                         styles.columnDivider,
                                                 ]}
                                             >
-                                                <View
-                                                    onLayout={(e) => {
-                                                        if (col.colspan === 1) {
-                                                            handleCellLayout(
-                                                                startCol,
-                                                                e.nativeEvent
-                                                                    .layout
-                                                                    .width,
-                                                            );
-                                                        }
-                                                    }}
-                                                    style={styles.cellInner}
-                                                >
+                                                <View style={styles.cellInner}>
                                                     <RichText
                                                         spans={cell.spans}
                                                         style={[
@@ -162,7 +142,7 @@ const TableView = ({ block, fontScale = 1 }: TableViewProps) => {
                                             key={colIndex}
                                             style={[
                                                 styles.columnStack,
-                                                { width: colWidth },
+                                                { width: colWidth, maxWidth: colWidth },
                                                 !isLastColumn &&
                                                     styles.columnDivider,
                                             ]}
@@ -187,20 +167,6 @@ const TableView = ({ block, fontScale = 1 }: TableViewProps) => {
                                                             ]}
                                                         >
                                                             <View
-                                                                onLayout={(e) => {
-                                                                    if (
-                                                                        col.colspan ===
-                                                                        1
-                                                                    ) {
-                                                                        handleCellLayout(
-                                                                            startCol,
-                                                                            e
-                                                                                .nativeEvent
-                                                                                .layout
-                                                                                .width,
-                                                                        );
-                                                                    }
-                                                                }}
                                                                 style={
                                                                     styles.cellInner
                                                                 }
@@ -243,7 +209,7 @@ const TableView = ({ block, fontScale = 1 }: TableViewProps) => {
     );
 };
 
-export default TableView;
+export default memo(TableView);
 
 const styles = StyleSheet.create({
     outerContainer: {
@@ -256,9 +222,7 @@ const styles = StyleSheet.create({
         color: Colors.textMuted,
         marginBottom: 6,
     },
-    scrollContent: {
-        paddingRight: 16,
-    },
+    scrollContent: {},
     table: {
         borderWidth: 1,
         borderColor: Colors.border,
@@ -281,6 +245,7 @@ const styles = StyleSheet.create({
     },
     cellInner: {
         alignSelf: "flex-start",
+        width: "100%",
     },
     headerCell: {
         backgroundColor: Colors.surfaceMuted,
@@ -312,3 +277,4 @@ const styles = StyleSheet.create({
         borderTopColor: Colors.divider,
     },
 });
+
