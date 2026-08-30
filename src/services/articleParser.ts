@@ -532,7 +532,10 @@ const parseTable = (node: any): TableBlock | null => {
 // Main entry point
 // ---------------------------------------------------------------------------
 
-export const parseArticle = (html: string): Block[] => {
+export const parseArticle = (
+    html: string,
+    options?: { hasHeroImage?: boolean },
+): Block[] => {
     const document = parseDocument(html);
     const blocks: Block[] = [];
 
@@ -598,6 +601,12 @@ export const parseArticle = (html: string): Block[] => {
 
     if (Array.isArray(document.children)) {
         document.children.forEach(walk);
+    }
+
+    if (options?.hasHeroImage) {
+        while (blocks.length > 0 && blocks[0].type === "image") {
+            blocks.shift();
+        }
     }
 
     return blocks;

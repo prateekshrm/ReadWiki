@@ -159,7 +159,11 @@ const Article = () => {
                 });
 
                 if (html) {
-                    setBlocks(parseArticle(html));
+                    setBlocks(
+                        parseArticle(html, {
+                            hasHeroImage: !!articleMeta.heroImage,
+                        }),
+                    );
                 }
             }
         } catch (error) {
