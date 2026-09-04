@@ -14,7 +14,7 @@ export default (): ExpoConfig => {
               : "ReadWiki",
 
         slug: "ReadWiki",
-        version: "1.3.0",
+        version: "1.3.1",
         orientation: "portrait",
 
         icon: "./assets/images/icon.png",
@@ -66,6 +66,15 @@ export default (): ExpoConfig => {
                 },
             ],
             "expo-sqlite",
+            [
+                "expo-build-properties",
+                {
+                    android: {
+                        enableMinifyInReleaseBuilds: true,
+                        enableShrinkResourcesInReleaseBuilds: true,
+                    },
+                },
+            ],
         ],
 
         experiments: {
